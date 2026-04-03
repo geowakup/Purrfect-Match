@@ -1,4 +1,4 @@
-    import sys
+import sys
 import json
 from PySide6.QtWidgets import QApplication, QLabel, QWidget
 from PySide6.QtCore import Qt, QTimer
