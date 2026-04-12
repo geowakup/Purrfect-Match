@@ -98,3 +98,8 @@ if __name__ == "__main__":
     window.show()
 
     sys.exit(app.exec())
+
+#Stop
+def keyPressEvent(self, event):
+    if event.key() == Qt.Key_Escape:
+        QApplication.quit()
