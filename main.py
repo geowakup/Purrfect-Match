@@ -3,6 +3,7 @@ import json
 from PySide6.QtWidgets import QApplication, QLabel, QWidget
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QMovie
 
 # =========================
 # PET LOGIC (Person 1)
@@ -50,8 +51,9 @@ class PetWindow(QWidget):
         self.label.setGeometry(0, 0, 200, 200)
 
         # 👉 Replace with your own image later
-        self.pixmap = QPixmap("pet.png")  
-        self.label.setPixmap(self.pixmap)
+        self.movie = QMovie("happy.gif")  # your animation file
+        self.label.setMovie(self.movie)
+        self.movie.start()
 
         # Timer (game loop)
         self.timer = QTimer()
@@ -66,6 +68,16 @@ class PetWindow(QWidget):
     # =========================
     def game_loop(self):
         self.pet.update()
+
+        if self.pet.state == "happy":
+            self.movie.setFileName("happy.jpg")
+        elif self.pet.state == "hungry":
+            self.movie.setFileName("hungry.jpg")
+        elif self.pet.state == "starving":
+            self.movie.setFileName("starving.jpg")
+
+        self.movie.start()
+
         print(f"Hunger: {self.pet.hunger}, State: {self.pet.state}")
 
     # =========================
@@ -99,7 +111,14 @@ if __name__ == "__main__":
 
     sys.exit(app.exec())
 
-#Stop
-def keyPressEvent(self, event):
-    if event.key() == Qt.Key_Escape:
-        QApplication.quit()
+#========================
+# EXIT ON ESCAPE
+#========================
+class PetWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        ...
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            QApplication.quit()
