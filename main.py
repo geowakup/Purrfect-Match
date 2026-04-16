@@ -72,9 +72,9 @@ class PetWindow(QWidget):
         if self.pet.state == "happy":
             self.movie.setFileName("happy.jpg")
         elif self.pet.state == "hungry":
-            self.movie.setFileName("hungry.jpg")
+            self.movie.setFileName("testing_1.jpg")
         elif self.pet.state == "starving":
-            self.movie.setFileName("starving.jpg")
+            self.movie.setFileName("testing_2.jpg")
 
         self.movie.start()
 
