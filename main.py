@@ -1,4 +1,5 @@
 import sys
+import os
 import json
 from PySide6.QtWidgets import QApplication, QLabel, QWidget
 from PySide6.QtCore import Qt, QTimer
@@ -27,6 +28,8 @@ class Pet:
             self.hunger = 100
         self.state = "happy"
 
+    def pet(self):
+        self.is_being_petted = True
 
 # =========================
 # MAIN WINDOW (Person 2)
@@ -68,26 +71,29 @@ class PetWindow(QWidget):
     # =========================
     def game_loop(self):
         self.pet.update()
-
         if self.pet.state == "happy":
-            self.movie.setFileName("happy.jpg")
+            self.movie.setFileName("happy.gif")
         elif self.pet.state == "hungry":
-            self.movie.setFileName("testing_1.jpg")
+            self.movie.setFileName("testing_1.gif")
         elif self.pet.state == "starving":
-            self.movie.setFileName("testing_2.jpg")
+            self.movie.setFileName("testing_2.gif")
+        elif self.pet.state == "petting":
+            self.movie.setFileName("petting.gif")  # add this file
 
         self.movie.start()
-
-        print(f"Hunger: {self.pet.hunger}, State: {self.pet.state}")
 
     # =========================
     # CLICK = FEED PET
     # =========================
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.pet.feed()
+            if self.has_food():
+                self.pet.feed()
             print("Pet fed!")
-
+        else:
+            self.pet.pet()
+            print("Petting only (no food)")
+            
         self.old_pos = event.globalPosition().toPoint()
 
     # =========================
@@ -122,3 +128,9 @@ class PetWindow(QWidget):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             QApplication.quit()
+
+    def has_food(self):
+        folder = "food"
+        if not os.path.exists(folder):
+            return False
+        return len(os.listdir(folder)) > 0
