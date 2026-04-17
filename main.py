@@ -1,5 +1,7 @@
 import sys
+import os
 import json
+import random
 from PySide6.QtWidgets import QApplication, QLabel, QWidget
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap
@@ -13,21 +15,32 @@ class Pet:
         self.hunger = 100
         self.state = "happy"
 
+        self.action = None
+        self.action_timer = 0   
+
     def update(self):
         self.hunger -= 1
-        if self.hunger <= 30:
-            self.state = "hungry"
+
+        if self.action_timer > 0:
+           self.state = self.action
+           self.action_timer -= 1
+           return
+
         if self.hunger <= 0:
-            self.hunger = 0
-            self.state = "starving"
+           self.state = "starving"
+        elif self.hunger <= 30:
+           self.state = "hungry"
+        else:
+           self.state = "happy"
 
-    def feed(self):
-        self.hunger += 20
-        if self.hunger > 100:
-            self.hunger = 100
-        self.state = "happy"
-
-
+    def pet(self):
+        self.action = random.choice([
+            "petting",
+            "jump",
+            "roll",
+            "sleep"
+        ])
+        self.action_timer = 3   
 # =========================
 # MAIN WINDOW (Person 2)
 # =========================
@@ -35,71 +48,68 @@ class PetWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        # Pet system
         self.pet = Pet()
 
-        # Window setup
         self.setWindowTitle("Desktop Pet")
         self.setFixedSize(200, 200)
 
-        # Make it look like a desktop pet
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
-        # Pet image
         self.label = QLabel(self)
         self.label.setGeometry(0, 0, 200, 200)
 
-        # 👉 Replace with your own image later
-        self.movie = QMovie("happy.gif")  # your animation file
+        self.movie = QMovie("happy.gif")
         self.label.setMovie(self.movie)
         self.movie.start()
 
-        # Timer (game loop)
         self.timer = QTimer()
         self.timer.timeout.connect(self.game_loop)
-        self.timer.start(1000)  # every 1 second
+        self.timer.start(1000)
 
-        # Drag support
         self.old_pos = None
 
-    # =========================
-    # GAME LOOP
-    # =========================
+    # ================= GAME LOOP =================
     def game_loop(self):
         self.pet.update()
 
-        if self.pet.state == "happy":
-            self.movie.setFileName("happy.jpg")
-        elif self.pet.state == "hungry":
-            self.movie.setFileName("hungry.jpg")
-        elif self.pet.state == "starving":
-            self.movie.setFileName("starving.jpg")
+        state = self.pet.state
 
-        self.movie.start()
+        if state == "happy":
+            new_file = "happy.gif"
+        elif state == "hungry":
+            new_file = "hungry.gif"
+        elif state == "starving":
+            new_file = "starving.gif"
+        elif state == "petting":
+            new_file = "petting.gif"
+        elif state == "jump":
+            new_file = "jump.gif"
+        elif state == "roll":
+            new_file = "roll.gif"
+        elif state == "sleep":
+            new_file = "sleep.gif"
+        else:
+            new_file = "happy.gif"
 
-        print(f"Hunger: {self.pet.hunger}, State: {self.pet.state}")
+        if self.movie.fileName() != new_file:
+            self.movie.setFileName(new_file)
+            self.movie.start()
 
-    # =========================
-    # CLICK = FEED PET
-    # =========================
+    # ================= DRAG + CLICK =================
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.pet.feed()
-            print("Pet fed!")
-
-        self.old_pos = event.globalPosition().toPoint()
-
-    # =========================
-    # DRAG WINDOW
-    # =========================
+            self.pet.pet()
+            self.drag_pos = event.globalPosition().toPoint()
+            
     def mouseMoveEvent(self, event):
-        if self.old_pos:
-            delta = event.globalPosition().toPoint() - self.old_pos
-            self.move(self.x() + delta.x(), self.y() + delta.y())
-            self.old_pos = event.globalPosition().toPoint()
+        if event.buttons() & Qt.LeftButton:
+            self.move(self.pos() + event.globalPosition().toPoint() - self.drag_pos)
+            self.drag_pos = event.globalPosition().toPoint()
 
 
+    def mouseReleaseEvent(self, event):
+        self.drag_pos = None
 # =========================
 # MAIN APP
 # =========================
@@ -111,14 +121,4 @@ if __name__ == "__main__":
 
     sys.exit(app.exec())
 
-#========================
-# EXIT ON ESCAPE
-#========================
-class PetWindow(QWidget):
-    def __init__(self):
-        super().__init__()
-        ...
     
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Escape:
-            QApplication.quit()
