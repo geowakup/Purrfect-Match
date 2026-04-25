@@ -1,11 +1,8 @@
 import sys
-import os
-import json
 import random
 from PySide6.QtWidgets import QApplication, QLabel, QWidget
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QPixmap
-from PySide6.QtGui import QPixmap, QMovie
+from PySide6.QtGui import QMovie
 
 # =========================
 # PET LOGIC (Person 1)
@@ -51,23 +48,31 @@ class PetWindow(QWidget):
         self.pet = Pet()
 
         self.setWindowTitle("Desktop Pet")
-        self.setFixedSize(200, 200)
-
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
 
         self.label = QLabel(self)
-        self.label.setGeometry(0, 0, 200, 200)
+        self.label.setAttribute(Qt.WA_TranslucentBackground)
+        self.label.setStyleSheet("background: transparent;")
 
         self.movie = QMovie("happy.gif")
         self.label.setMovie(self.movie)
         self.movie.start()
 
+        self.movie.frameChanged.connect(self.update_size)
+
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setStyleSheet("background: transparent;")
+
         self.timer = QTimer()
         self.timer.timeout.connect(self.game_loop)
         self.timer.start(1000)
 
-        self.old_pos = None
+        self.drag_pos = None
+
+    def update_size(self):
+        size = self.movie.currentPixmap().size()
+        self.resize(size)
+        self.label.setGeometry(0, 0, size.width(), size.height())
 
     # ================= GAME LOOP =================
     def game_loop(self):
@@ -120,5 +125,3 @@ if __name__ == "__main__":
     window.show()
 
     sys.exit(app.exec())
-
-    
