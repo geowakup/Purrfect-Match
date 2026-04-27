@@ -110,14 +110,12 @@ class PetWindow(QWidget):
         if event.button() == Qt.LeftButton:
             self.pet.pet()
 
-        # set drag start position
-        self.drag_pos = event.globalPosition().toPoint()
+            if self.todo_window is None:
+                self.todo_window = TodoApp()
+            self.todo_window.show()
 
-        # open todo window
-        if self.todo_window is None:
-            self.todo_window = TodoApp()
-        self.todo_window.show()
-            
+            self.drag_pos = event.globalPosition().toPoint()
+              
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.LeftButton and self.drag_pos is not None:
             current_pos = event.globalPosition().toPoint()

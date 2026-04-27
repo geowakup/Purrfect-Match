@@ -2,6 +2,9 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout,
     QPushButton, QListWidget, QInputDialog
 )
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QListWidgetItem
+
 # =========================
 # Task (TO-DO-LIST)
 # =========================
@@ -15,6 +18,7 @@ class TodoApp(QWidget):
         layout = QVBoxLayout()
 
         self.task_list = QListWidget()
+        self.task_list.itemChanged.connect(self.handle_item_change)
         layout.addWidget(self.task_list)
 
         self.add_button = QPushButton("Add Task")
@@ -30,10 +34,30 @@ class TodoApp(QWidget):
     def add_task(self):
         text, ok = QInputDialog.getText(self, "Add Task", "Enter task:")
         if ok and text.strip():
-            self.task_list.addItem(text)
+            item = QListWidgetItem(text)
+
+            # add checkbox
+            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+            item.setCheckState(Qt.Unchecked)
+
+            self.task_list.addItem(item)
 
     def delete_task(self):
-        selected = self.task_list.currentRow()
-        if selected >= 0:
-            self.task_list.takeItem(selected)
+        for i in reversed(range(self.task_list.count())):
+            item = self.task_list.item(i)
+            if item.checkState() == Qt.Checked:
+                self.task_list.takeItem(i)
 
+    def handle_item_change(self, item):
+        if item.checkState() == Qt.Checked:
+            font = item.font()
+            font.setStrikeOut(True)
+            item.setFont(font)
+            item.setForeground(Qt.gray)
+            
+        else:
+            font = item.font()
+            font.setStrikeOut(False)
+            item.setFont(font)
+            item.setForeground(Qt.black)
+    
