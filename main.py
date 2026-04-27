@@ -3,6 +3,7 @@ import random
 from PySide6.QtWidgets import QApplication, QLabel, QWidget
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QMovie
+from PySide6.QtCore import QSize
 
 # =========================
 # PET LOGIC (Person 1)
@@ -54,9 +55,9 @@ class PetWindow(QWidget):
         self.label.setStyleSheet("background: transparent;")
 
         self.movie = QMovie("happy.gif")
+        self.movie.setScaledSize(QSize(200, 200))
         self.label.setMovie(self.movie)
         self.movie.start()
-
         self.movie.frameChanged.connect(self.update_size)
 
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
@@ -70,9 +71,8 @@ class PetWindow(QWidget):
         self.drag_pos = None
 
     def update_size(self):
-        size = self.movie.currentPixmap().size()
-        self.resize(size)
-        self.label.setGeometry(0, 0, size.width(), size.height())
+        self.resize(200, 200)
+        self.label.setGeometry(0, 0, 200, 200)
 
     # ================= GAME LOOP =================
     def game_loop(self):
@@ -115,13 +115,3 @@ class PetWindow(QWidget):
 
     def mouseReleaseEvent(self, event):
         self.drag_pos = None
-# =========================
-# MAIN APP
-# =========================
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    window = PetWindow()
-    window.show()
-
-    sys.exit(app.exec())
