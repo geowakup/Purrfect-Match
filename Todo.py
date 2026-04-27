@@ -1,6 +1,5 @@
-import sys
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout,
+    QWidget, QVBoxLayout,
     QPushButton, QListWidget, QInputDialog
 )
 # =========================
@@ -38,11 +37,3 @@ class TodoApp(QWidget):
         if selected >= 0:
             self.task_list.takeItem(selected)
 
-if __name__ == "__main__":
-    import sys
-    from PySide6.QtWidgets import QApplication
-
-    app = QApplication(sys.argv)
-    window = TodoApp()
-    window.show()
-    sys.exit(app.exec())    

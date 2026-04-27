@@ -1,9 +1,11 @@
 import sys
+import os
 import random
 from PySide6.QtWidgets import QApplication, QLabel, QWidget
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QMovie
 from PySide6.QtCore import QSize
+from Todo import TodoApp
 
 # =========================
 # PET LOGIC (Person 1)
@@ -53,8 +55,9 @@ class PetWindow(QWidget):
         self.label = QLabel(self)
         self.label.setAttribute(Qt.WA_TranslucentBackground)
         self.label.setStyleSheet("background: transparent;")
-
-        self.movie = QMovie("happy.gif")
+        
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.movie = QMovie(os.path.join(BASE_DIR, "happy.gif"))
         self.movie.setScaledSize(QSize(200, 200))
         self.label.setMovie(self.movie)
         self.movie.start()
@@ -69,6 +72,7 @@ class PetWindow(QWidget):
         self.timer.start(1000)
 
         self.drag_pos = None
+        self.todo_window = None
 
     def update_size(self):
         self.resize(200, 200)
@@ -105,13 +109,29 @@ class PetWindow(QWidget):
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.pet.pet()
-            self.drag_pos = event.globalPosition().toPoint()
+
+        # set drag start position
+        self.drag_pos = event.globalPosition().toPoint()
+
+        # open todo window
+        if self.todo_window is None:
+            self.todo_window = TodoApp()
+        self.todo_window.show()
             
     def mouseMoveEvent(self, event):
-        if event.buttons() & Qt.LeftButton:
-            self.move(self.pos() + event.globalPosition().toPoint() - self.drag_pos)
-            self.drag_pos = event.globalPosition().toPoint()
+        if event.buttons() & Qt.LeftButton and self.drag_pos is not None:
+            current_pos = event.globalPosition().toPoint()
+            delta = current_pos - self.drag_pos
+            self.move(self.pos() + delta)
+            self.drag_pos = current_pos
 
+# =========================
+# MAIN APP
+# =========================
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
 
-    def mouseReleaseEvent(self, event):
-        self.drag_pos = None
+    window = PetWindow()
+    window.show()
+
+    sys.exit(app.exec())
