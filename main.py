@@ -18,7 +18,7 @@ class Pet:
         self.action_timer = 0   
 
     def update(self):
-        self.hunger -= 1
+        self.hunger = max(0, self.hunger - 1)
 
         if self.action_timer > 0:
            self.state = self.action
@@ -32,14 +32,9 @@ class Pet:
         else:
            self.state = "happy"
 
-    def pet(self):
-        self.action = random.choice([
-            "petting",
-            "jump",
-            "roll",
-            "sleep"
-        ])
-        self.action_timer = 3   
+    def trigger_random_action(self):
+        self.action = random.choice(["jump", "roll", "sleep"])
+        self.action_timer = 10 
 # =========================
 # MAIN WINDOW (Person 2)
 # =========================
@@ -48,67 +43,80 @@ class PetWindow(QWidget):
         super().__init__()
 
         self.pet = Pet()
+        self.is_holding = False
 
-    #------------------------Window Titile + Transparent Background + Size------------------------
+# ---------------------------- Window setup ----------------------------
         self.setWindowTitle("Desktop Pet")
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setStyleSheet("background: transparent;")
 
+# ---------------------------- Label (GIF display) ----------------------------
         self.label = QLabel(self)
         self.label.setAttribute(Qt.WA_TranslucentBackground)
+        self.label.setAttribute(Qt.WA_TransparentForMouseEvents)  # 👈 important
         self.label.setStyleSheet("background: transparent;")
-    
-    #------------------------GIF Setup------------------------
-    def update_size(self):
+
+# ---------------------------- Size ----------------------------
         self.resize(220, 240)
         self.label.setGeometry(0, 0, 200, 200)
 
+# ---------------------------- Paths ----------------------------
         self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         self.current_gif = ""
 
-        self.movie = QMovie(os.path.join(self.BASE_DIR, "firefly-hsr-firefly.gif"))
+# ---------------------------- GIF setup ----------------------------
+        self.movie = QMovie(os.path.join(self.BASE_DIR, "firefly_dance.gif"))
         print("GIF valid:", self.movie.isValid())
+
         self.movie.setScaledSize(QSize(200, 200))
         self.movie.setCacheMode(QMovie.CacheAll)
         self.movie.setSpeed(100)
 
         self.label.setMovie(self.movie)
         self.movie.start()
-        self.update_size()
-        self.current_gif = os.path.join(self.BASE_DIR, "firefly-hsr-firefly.gif")
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setStyleSheet("background: transparent;")
 
+        self.current_gif = os.path.join(self.BASE_DIR, "firefly_dance.gif")
+
+#---------------------------- Timer ----------------------------
         self.timer = QTimer()
         self.timer.timeout.connect(self.game_loop)
         self.timer.start(200)
 
-    #------------------------To-Do Button ------------------------
+#---------------------------- Button ----------------------------
         self.todo_window = None
         self.drag_pos = None
-       
+
         self.todo_button = QPushButton("To-Do", self)
         self.todo_button.setGeometry(60, 200, 100, 30)
         self.todo_button.clicked.connect(self.open_todo)
 
     def open_todo(self):
-        if self.todo_window is None:
+        if self.todo_window is None or not self.todo_window.isVisible():
             self.todo_window = TodoApp()
-        self.todo_window.show() 
+            self.todo_window.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        self.todo_window.show()
+        self.todo_window.raise_()
+        self.todo_window.activateWindow() 
         
-    # ------------------------Game Loop: Update Pet State + Change GIF------------------------
+# ------------------------Game Loop: Update Pet State + Change GIF------------------------
     def game_loop(self):
+        if self.is_holding and self.pet.hunger > 0:
+            self.pet.action = "petting"
+            self.pet.action_timer = 1  
+        
         self.pet.update()
 
         state = self.pet.state
 
         if state == "happy":
-            new_file = "firefly-hsr-firefly.gif"
+            new_file = "firefly_dance.gif"
         elif state == "hungry":
             new_file = "hungry.gif"
         elif state == "starving":
             new_file = "starving.gif"
         elif state == "petting":
-            new_file = "petting.gif"
+            new_file = "firefly_petting.gif"
         elif state == "jump":
             new_file = "jump.gif"
         elif state == "roll":
@@ -120,22 +128,42 @@ class PetWindow(QWidget):
         
         new_path = os.path.join(self.BASE_DIR, new_file)
 
+        if not os.path.exists(new_path):
+            print("Missing GIF:", new_path)
+            return
+
         if self.current_gif != new_path:
             self.current_gif = new_path
             self.movie.stop()
-            self.movie.setFileName(new_path)
+            self.movie.deleteLater()
+            self.movie = QMovie(new_path)
+            self.movie.setScaledSize(QSize(200, 200))
+            self.movie.setCacheMode(QMovie.CacheAll)
+            self.movie.setSpeed(100)
+            self.label.setMovie(self.movie)
             self.movie.start()
 
-    # ------------------------Drag Window + Close App------------------------
+# ------------------------Drag Window + Close App------------------------
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.pet.pet()
+            child = self.childAt(event.position().toPoint())
+            if child == self.todo_button:
+                return
+            self.is_holding = True
             self.drag_pos = event.globalPosition().toPoint()
-              
+    
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.is_holding = False
+            self.drag_pos = None
+            self.dragging = False
+
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.LeftButton and self.drag_pos is not None:
             current_pos = event.globalPosition().toPoint()
             delta = current_pos - self.drag_pos
+            if delta.manhattanLength() > 3:
+                self.dragging = True
             self.move(self.pos() + delta)
             self.drag_pos = current_pos
     
