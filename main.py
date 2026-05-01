@@ -2,8 +2,8 @@ import sys
 import os
 import random
 from PySide6.QtWidgets import QApplication, QLabel, QWidget, QPushButton
-from PySide6.QtCore import Qt, QTimer, QSize
-from PySide6.QtGui import QMovie
+from PySide6.QtCore import Qt, QTimer, QSize, QPropertyAnimation
+from PySide6.QtGui import QMovie, QCursor
 from Todo import TodoApp
 
 # =========================
@@ -35,6 +35,7 @@ class Pet:
     def trigger_random_action(self):
         self.action = random.choice(["jump", "roll", "sleep"])
         self.action_timer = 10 
+    
 # =========================
 # MAIN WINDOW (Person 2)
 # =========================
@@ -43,18 +44,22 @@ class PetWindow(QWidget):
         super().__init__()
 
         self.pet = Pet()
+
         self.is_holding = False
 
+        self.dragging = False
+        
 # ---------------------------- Window setup ----------------------------
         self.setWindowTitle("Desktop Pet")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setStyleSheet("background: transparent;")
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WA_NoSystemBackground, True)
+        self.setStyleSheet("background: transparent; border:none;")
 
 # ---------------------------- Label (GIF display) ----------------------------
         self.label = QLabel(self)
         self.label.setAttribute(Qt.WA_TranslucentBackground)
-        self.label.setAttribute(Qt.WA_TransparentForMouseEvents)  # 👈 important
+        self.label.setAttribute(Qt.WA_TransparentForMouseEvents) 
         self.label.setStyleSheet("background: transparent;")
 
 # ---------------------------- Size ----------------------------
@@ -89,16 +94,70 @@ class PetWindow(QWidget):
 
         self.todo_button = QPushButton("To-Do", self)
         self.todo_button.setGeometry(60, 200, 100, 30)
+        self.todo_button.setFocusPolicy(Qt.StrongFocus)
         self.todo_button.clicked.connect(self.open_todo)
 
+# ------------------------ Button Hover + Style------------------
+        self.hover_timer = QTimer()
+        self.hover_timer.timeout.connect(self.check_hover)
+        self.hover_timer.start(100)
+        self.setMouseTracking(True)
+        self.label.setMouseTracking(True)
+        self.todo_button.setStyleSheet("""QPushButton {background-color: rgba(255, 80, 80, 220);color: white;border-radius: 10px;font-weight: bold;}QPushButton:hover {background-color: rgba(255, 120, 120, 255);}""")
+        self.todo_button.hide()
+
+# ------------------------- Button Animation ------------------------
+        self.anim = QPropertyAnimation(self.todo_button, b"windowOpacity")
+        self.anim.setDuration(150)
+
+# ------------------------- Button Hide Timer ------------------------
+        self.hide_timer = QTimer(self)
+        self.hide_timer.setSingleShot(True)
+        self.hide_timer.timeout.connect(self.hide_button)
+
+# ------------------------- Hide Button Function ------------------------
+    def hide_button(self):
+        try:
+            self.anim.finished.disconnect()
+        except:
+            pass
+
+        self.anim.stop()
+        self.anim.setStartValue(self.todo_button.windowOpacity())
+        self.anim.setEndValue(0)
+
+        self.anim.finished.connect(self.todo_button.hide)
+        self.anim.start()
+
+# ------------------------ Check and trigger ------------------------
+    def check_hover(self):
+        local_pos = self.mapFromGlobal(QCursor.pos())
+        hovered = self.label.geometry().contains(local_pos)
+
+        if hovered and not self.todo_button.isVisible() :
+            self.todo_button.show()
+
+            self.anim.stop()
+            self.anim.setStartValue(self.todo_button.windowOpacity())
+            self.anim.setEndValue(1)
+            self.anim.start()
+        
+        if hovered:
+            self.hide_timer.start(10000)
+        else:
+            if self.todo_button.isVisible() and not self.hide_timer.isActive():
+                self.hide_timer.start(10000)
+
+# ------------------------ Open To-Do Window ------------------------
     def open_todo(self):
         if self.todo_window is None or not self.todo_window.isVisible():
             self.todo_window = TodoApp()
             self.todo_window.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+
         self.todo_window.show()
         self.todo_window.raise_()
         self.todo_window.activateWindow() 
-        
+
 # ------------------------Game Loop: Update Pet State + Change GIF------------------------
     def game_loop(self):
         if self.is_holding and self.pet.hunger > 0:
@@ -146,9 +205,6 @@ class PetWindow(QWidget):
 # ------------------------Drag Window + Close App------------------------
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            child = self.childAt(event.position().toPoint())
-            if child == self.todo_button:
-                return
             self.is_holding = True
             self.drag_pos = event.globalPosition().toPoint()
     
