@@ -1,10 +1,9 @@
 import sys
 import os
 import random
-from PySide6.QtWidgets import QApplication, QLabel, QWidget
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import QApplication, QLabel, QWidget, QPushButton
+from PySide6.QtCore import Qt, QTimer, QSize
 from PySide6.QtGui import QMovie
-from PySide6.QtCore import QSize
 from Todo import TodoApp
 
 # =========================
@@ -50,12 +49,18 @@ class PetWindow(QWidget):
 
         self.pet = Pet()
 
+    #------------------------Window Titile + Transparent Background + Size------------------------
         self.setWindowTitle("Desktop Pet")
 
         self.label = QLabel(self)
         self.label.setAttribute(Qt.WA_TranslucentBackground)
         self.label.setStyleSheet("background: transparent;")
-        
+    
+    #------------------------GIF Setup------------------------
+    def update_size(self):
+        self.resize(220, 240)
+        self.label.setGeometry(0, 0, 200, 200)
+
         self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         self.current_gif = ""
 
@@ -76,15 +81,21 @@ class PetWindow(QWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self.game_loop)
         self.timer.start(200)
-  
-        self.drag_pos = None
+
+    #------------------------To-Do Button ------------------------
         self.todo_window = None
+        self.drag_pos = None
+       
+        self.todo_button = QPushButton("To-Do", self)
+        self.todo_button.setGeometry(60, 200, 100, 30)
+        self.todo_button.clicked.connect(self.open_todo)
 
-    def update_size(self):
-        self.resize(200, 200)
-        self.label.setGeometry(0, 0, 200, 200)
-
-    # ================= GAME LOOP =================
+    def open_todo(self):
+        if self.todo_window is None:
+            self.todo_window = TodoApp()
+        self.todo_window.show() 
+        
+    # ------------------------Game Loop: Update Pet State + Change GIF------------------------
     def game_loop(self):
         self.pet.update()
 
@@ -115,15 +126,10 @@ class PetWindow(QWidget):
             self.movie.setFileName(new_path)
             self.movie.start()
 
-    # ================= DRAG + CLICK =================
+    # ------------------------Drag Window + Close App------------------------
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.pet.pet()
-
-            if self.todo_window is None:
-                self.todo_window = TodoApp()
-            self.todo_window.show()
-
             self.drag_pos = event.globalPosition().toPoint()
               
     def mouseMoveEvent(self, event):
