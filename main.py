@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QApplication, QLabel, QWidget, QPushButton
 from PySide6.QtCore import Qt, QTimer, QSize, QPropertyAnimation
 from PySide6.QtGui import QMovie, QCursor
 from Todo import TodoApp
+from Setting import SettingsApp
 
 # =========================
 # PET LOGIC (Person 1)
@@ -48,6 +49,8 @@ class PetWindow(QWidget):
         self.is_holding = False
 
         self.dragging = False
+
+        self.settings_window = None
         
 # ---------------------------- Window setup ----------------------------
         self.setWindowTitle("Desktop Pet")
@@ -88,14 +91,24 @@ class PetWindow(QWidget):
         self.timer.timeout.connect(self.game_loop)
         self.timer.start(200)
 
-#---------------------------- Button ----------------------------
+#---------------------------- To-Do Button ----------------------------
         self.todo_window = None
         self.drag_pos = None
 
         self.todo_button = QPushButton("To-Do", self)
-        self.todo_button.setGeometry(60, 200, 100, 30)
+        self.todo_button.setGeometry(60, 200, 70, 30)
         self.todo_button.setFocusPolicy(Qt.StrongFocus)
         self.todo_button.clicked.connect(self.open_todo)
+
+#---------------------------- Settings Button ----------------------------
+        self.settings_button = QPushButton("Settings", self)
+        self.settings_button.setGeometry(145, 200, 70, 30)  
+        self.settings_button.setFocusPolicy(Qt.StrongFocus)
+        self.settings_button.clicked.connect(self.open_settings)
+
+        self.settings_button.setStyleSheet("""QPushButton {background-color: rgba(80, 80, 255, 220);color: white;border-radius: 10px;font-weight: bold;}QPushButton:hover {background-color: rgba(120, 120, 255, 255);}""")
+
+        self.settings_button.hide()
 
 # ------------------------ Button Hover + Style------------------
         self.hover_timer = QTimer()
@@ -127,6 +140,7 @@ class PetWindow(QWidget):
         self.anim.setEndValue(0)
 
         self.anim.finished.connect(self.todo_button.hide)
+        self.settings_button.hide()
         self.anim.start()
 
 # ------------------------ Check and trigger ------------------------
@@ -136,6 +150,7 @@ class PetWindow(QWidget):
 
         if hovered and not self.todo_button.isVisible() :
             self.todo_button.show()
+            self.settings_button.show()
 
             self.anim.stop()
             self.anim.setStartValue(self.todo_button.windowOpacity())
@@ -157,6 +172,18 @@ class PetWindow(QWidget):
         self.todo_window.show()
         self.todo_window.raise_()
         self.todo_window.activateWindow() 
+
+# -------------------------- Setting --------------------------------------
+    def open_settings(self):
+        if self.settings_window is None or not self.settings_window.isVisible():
+            self.settings_window = SettingsApp()
+            self.settings_window.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+
+            self.settings_window.pet = self.pet
+
+            self.settings_window.show()
+            self.settings_window.raise_()
+            self.settings_window.activateWindow()
 
 # ------------------------Game Loop: Update Pet State + Change GIF------------------------
     def game_loop(self):
