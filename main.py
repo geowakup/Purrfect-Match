@@ -102,23 +102,22 @@ class PetWindow(QWidget):
 
 #---------------------------- Character Select Button ----------------------------
         self.character_button = QPushButton("Character", self)
-        self.character_button.setGeometry(60, 200, 90, 30) 
+        self.character_button.setGeometry(78, 200, 70, 30) 
         self.character_button.clicked.connect(self.open_character)
 
-        self.character_button.setStyleSheet("""
-        QPushButton {background-color: rgba(80, 200, 120, 220);color: white;border-radius: 10px;font-weight: bold;}QPushButton:hover {background-color: rgba(120, 230, 160, 255);}""")
+        self.character_button.setStyleSheet("""QPushButton {background-color: rgba(80, 200, 120, 220);color: white;border-radius: 10px;font-weight: bold;}QPushButton:hover {background-color: rgba(120, 230, 160, 255);}""")
 
         self.character_button.hide()
 
 #---------------------------- To-Do Button ----------------------------
         self.todo_button = QPushButton("To-Do", self)
-        self.todo_button.setGeometry(5, 200, 70, 30)
+        self.todo_button.setGeometry(19, 200, 55, 30)
         self.todo_button.setFocusPolicy(Qt.StrongFocus)
         self.todo_button.clicked.connect(self.open_todo)
 
 #---------------------------- Settings Button ----------------------------
         self.settings_button = QPushButton("Settings", self)
-        self.settings_button.setGeometry(145, 200, 70, 30)  
+        self.settings_button.setGeometry(152, 200, 55, 30)  
         self.settings_button.setFocusPolicy(Qt.StrongFocus)
         self.settings_button.clicked.connect(self.open_settings)
 
@@ -133,9 +132,7 @@ class PetWindow(QWidget):
         self.setMouseTracking(True)
         self.label.setMouseTracking(True)
         self.todo_button.setStyleSheet("""QPushButton {background-color: rgba(255, 80, 80, 220);color: white;border-radius: 10px;font-weight: bold;}QPushButton:hover {background-color: rgba(255, 120, 120, 255);}""")
-        self.todo_button.hide()
-        self.settings_button.hide()
-        self.character_button.hide() 
+        self.todo_button.hide() 
 
 # ------------------------- Button Animation ------------------------
         self.anim = QPropertyAnimation(self.todo_button, b"windowOpacity")
@@ -158,8 +155,8 @@ class PetWindow(QWidget):
         self.anim.setEndValue(0)
 
         self.anim.finished.connect(self.todo_button.hide)
-        self.settings_button.hide()
-        self.character_button.hide()
+        self.anim.finished.connect(self.settings_button.hide)
+        self.anim.finished.connect(self.character_button.hide)
         self.anim.start()
 
 # ------------------------ Check and trigger ------------------------
