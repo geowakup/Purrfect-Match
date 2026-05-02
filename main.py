@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt, QTimer, QSize, QPropertyAnimation
 from PySide6.QtGui import QMovie, QCursor
 from Todo import TodoApp
 from Setting import SettingsApp
+from CharacterSelect import CharacterSelectApp
 
 # =========================
 # PET LOGIC (Person 1)
@@ -51,7 +52,15 @@ class PetWindow(QWidget):
         self.dragging = False
 
         self.settings_window = None
+
+        self.todo_window = None
+
+        self.drag_pos = None
+
+        self.character_window = None
         
+        self.current_character = "firefly"
+
 # ---------------------------- Window setup ----------------------------
         self.setWindowTitle("Desktop Pet")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
@@ -91,12 +100,19 @@ class PetWindow(QWidget):
         self.timer.timeout.connect(self.game_loop)
         self.timer.start(200)
 
-#---------------------------- To-Do Button ----------------------------
-        self.todo_window = None
-        self.drag_pos = None
+#---------------------------- Character Select Button ----------------------------
+        self.character_button = QPushButton("Character", self)
+        self.character_button.setGeometry(60, 200, 90, 30) 
+        self.character_button.clicked.connect(self.open_character)
 
+        self.character_button.setStyleSheet("""
+        QPushButton {background-color: rgba(80, 200, 120, 220);color: white;border-radius: 10px;font-weight: bold;}QPushButton:hover {background-color: rgba(120, 230, 160, 255);}""")
+
+        self.character_button.hide()
+
+#---------------------------- To-Do Button ----------------------------
         self.todo_button = QPushButton("To-Do", self)
-        self.todo_button.setGeometry(60, 200, 70, 30)
+        self.todo_button.setGeometry(5, 200, 70, 30)
         self.todo_button.setFocusPolicy(Qt.StrongFocus)
         self.todo_button.clicked.connect(self.open_todo)
 
@@ -118,6 +134,8 @@ class PetWindow(QWidget):
         self.label.setMouseTracking(True)
         self.todo_button.setStyleSheet("""QPushButton {background-color: rgba(255, 80, 80, 220);color: white;border-radius: 10px;font-weight: bold;}QPushButton:hover {background-color: rgba(255, 120, 120, 255);}""")
         self.todo_button.hide()
+        self.settings_button.hide()
+        self.character_button.hide() 
 
 # ------------------------- Button Animation ------------------------
         self.anim = QPropertyAnimation(self.todo_button, b"windowOpacity")
@@ -141,6 +159,7 @@ class PetWindow(QWidget):
 
         self.anim.finished.connect(self.todo_button.hide)
         self.settings_button.hide()
+        self.character_button.hide()
         self.anim.start()
 
 # ------------------------ Check and trigger ------------------------
@@ -151,6 +170,7 @@ class PetWindow(QWidget):
         if hovered and not self.todo_button.isVisible() :
             self.todo_button.show()
             self.settings_button.show()
+            self.character_button.show()
 
             self.anim.stop()
             self.anim.setStartValue(self.todo_button.windowOpacity())
@@ -173,6 +193,43 @@ class PetWindow(QWidget):
         self.todo_window.raise_()
         self.todo_window.activateWindow() 
 
+# ------------------------ Open Character Select Window ------------------------
+    def open_character(self):
+        if self.character_window is None or not self.character_window.isVisible():
+            self.character_window = CharacterSelectApp()
+            self.character_window.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+
+        self.character_window.parent_window = self
+
+        self.character_window.show()
+        self.character_window.raise_()
+        self.character_window.activateWindow()
+
+#------------------------ Change Character (called from character select) ------------------------
+    def change_character(self, name):
+        self.current_character = name   
+        
+        if name == "firefly":
+            file = "firefly_dance.gif"
+        elif name == "cat":
+            file = "cat_idle.gif"
+        elif name == "dog":
+            file = "dog_idle.gif"
+        else:
+            return
+
+        new_path = os.path.join(self.BASE_DIR, file)
+
+        if os.path.exists(new_path):
+            self.current_gif = new_path
+            self.movie.stop()
+            self.movie.deleteLater()
+
+            self.movie = QMovie(new_path)
+            self.movie.setScaledSize(QSize(200, 200))
+            self.label.setMovie(self.movie)
+            self.movie.start()
+
 # -------------------------- Setting --------------------------------------
     def open_settings(self):
         if self.settings_window is None or not self.settings_window.isVisible():
@@ -188,34 +245,31 @@ class PetWindow(QWidget):
 # ------------------------Game Loop: Update Pet State + Change GIF------------------------
     def game_loop(self):
         if self.is_holding and self.pet.hunger > 0:
-            if self.pet.action != "petting":
-                self.pet.action = "petting"
-                self.pet.action_timer = 1  
-            else:
-                if self.pet.action == "petting":
-                    self.pet.action = None
-                    self.pet.action_timer = 0
-                    
+            self.pet.action = "petting"
+            self.pet.action_timer = 1  
+        else:
+            if self.pet.action == "petting":
+                self.pet.action = None
+                self.pet.action_timer = 0
+
         self.pet.update()
 
         state = self.pet.state
 
         if state == "happy":
-            new_file = "firefly_dance.gif"
+            new_file = f"{self.current_character}_idle.gif"
         elif state == "hungry":
-            new_file = "hungry.gif"
+            new_file = f"{self.current_character}_hungry.gif"
         elif state == "starving":
-            new_file = "starving.gif"
+            new_file = f"{self.current_character}_starving.gif"
         elif state == "petting":
-            new_file = "firefly_petting.gif"
+            new_file = f"{self.current_character}_petting.gif"
         elif state == "jump":
-            new_file = "jump.gif"
+            new_file = f"{self.current_character}_jump.gif"
         elif state == "roll":
-            new_file = "roll.gif"
+            new_file = f"{self.current_character}_roll.gif"
         elif state == "sleep":
-            new_file = "sleep.gif"
-        else:
-            new_file = "happy.gif"
+            new_file = f"{self.current_character}_sleep.gif"
         
         new_path = os.path.join(self.BASE_DIR, new_file)
 
