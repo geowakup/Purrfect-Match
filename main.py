@@ -188,9 +188,14 @@ class PetWindow(QWidget):
 # ------------------------Game Loop: Update Pet State + Change GIF------------------------
     def game_loop(self):
         if self.is_holding and self.pet.hunger > 0:
-            self.pet.action = "petting"
-            self.pet.action_timer = 1  
-        
+            if self.pet.action != "petting":
+                self.pet.action = "petting"
+                self.pet.action_timer = 1  
+            else:
+                if self.pet.action == "petting":
+                    self.pet.action = None
+                    self.pet.action_timer = 0
+                    
         self.pet.update()
 
         state = self.pet.state
@@ -240,6 +245,9 @@ class PetWindow(QWidget):
             self.is_holding = False
             self.drag_pos = None
             self.dragging = False
+
+            self.pet.action = None
+            self.pet.action_timer = 0
 
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.LeftButton and self.drag_pos is not None:
