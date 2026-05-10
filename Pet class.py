@@ -17,15 +17,15 @@ class Pet:
     def update_state(self):
         if self.hunger <= 20:
             self.state = "starving"
-        elif self.hunger >= 80:
+        if self.hunger >= 80:
             self.state = "full"
-        elif self.happiness <= 20:
+        if self.happiness <= 20:
             self.state = "sad"
-        elif self.happiness >= 80:
+        if self.happiness >= 80:
             self.state = "happy"
-        elif self.energy <= 20:
+        if self.energy <= 20:
             self.state = "sleepy"
-        elif self.energy >= 80:
+        if self.energy >= 80:
             self.state = "energetic"
         else:
             self.state = "idle"
@@ -38,6 +38,7 @@ class Pet:
 
     def status(self):
         return{
+            "name" : self.name,
             "hunger": self.hunger,
             "happiness": self.happiness,
             "energy": self.energy,
