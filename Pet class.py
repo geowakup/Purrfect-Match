@@ -8,7 +8,7 @@ class Pet:
         self.happiness = 100    # 0 = sad, 100 =happy
         self.energy = 100          # 0 = exhausted, 100 = energetic 
 
-        self.state = "idle"        # idle, happy, sad, sleeping 
+        self.state = "happy"        # idle, happy, sad, sleeping 
 
         self.action = None
         self.action_timer = 0
@@ -47,7 +47,7 @@ class Pet:
     # --- User Interactions ---
     def feed(self):
         """Feed the pet to increase hunger level."""
-        self.hunger = min(100, self.hunger + 20)
+        self.hunger = min(100, self.hunger + 10)
         self.update_state()
 
     def play(self):
