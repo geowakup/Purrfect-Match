@@ -85,16 +85,17 @@ class Pet:
     def update(self):
         # Stat decay
         self.hunger = max(0, self.hunger -1)
-        self.happiness = max(0, self.happiness -1)
         self.energy = max(0, self.energy -1)
         self.cleanliness = max(0, self.cleanliness -1)
-        
+
+        if self.hunger <= 30 or self.energy <= 30:
+            self.happiness = max(0, self.happiness - 1)
+
         # temporary action
         if self.action_timer > 0:
             self.action_timer -= 1
         else:
             self.state["action"] = None
-            return
         
         # state logic
         self.update_state() 
