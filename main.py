@@ -7,6 +7,7 @@ from PySide6.QtGui import QMovie, QCursor
 from Todo import TodoApp
 from Setting import SettingsApp
 from CharacterSelect import CharacterSelectApp
+from advancement import AdvancementsManager
 
 # =========================
 # PET LOGIC (Person 1)
@@ -56,6 +57,8 @@ class PetWindow(QWidget):
         self.todo_window = None
 
         self.drag_pos = None
+
+        self.advancement_manager = AdvancementsManager()
 
         self.character_window = None
         
@@ -234,6 +237,7 @@ class PetWindow(QWidget):
             self.settings_window.setWindowFlag(Qt.WindowStaysOnTopHint, True)
 
             self.settings_window.pet = self.pet
+            self.settings_window.parent_window = self
 
             self.settings_window.show()
             self.settings_window.raise_()
@@ -248,8 +252,12 @@ class PetWindow(QWidget):
             if self.pet.action == "petting":
                 self.pet.action = None
                 self.pet.action_timer = 0
-
+        
         self.pet.update()
+        
+        if self.pet.hunger > 0:
+            self.advancement_manager.add_progress("alive_1_hour",0.2)
+
 
         state = self.pet.state
 
@@ -326,4 +334,4 @@ if __name__ == "__main__":
 
     sys.exit(app.exec())
 
-    iesf0ijioja
+    
