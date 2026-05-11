@@ -23,11 +23,11 @@ class SettingsApp(QWidget):
         layout = QVBoxLayout()
 
         # =========================
-        # Achievement Button
+        # Advancement Button
         # =========================
-        self.achievement_button = QPushButton("Achievements")
-        self.achievement_button.clicked.connect(self.show_achievements)
-        layout.addWidget(self.achievement_button)
+        self.advancement_button = QPushButton("Advancements")
+        self.advancement_button.clicked.connect(self.show_advancements)
+        layout.addWidget(self.advancement_button)
 
         # =========================
         # Hidden Golden Finger Buttons
@@ -84,28 +84,13 @@ class SettingsApp(QWidget):
 
         self.golden_mode = False
 
-        # =========================
-        # Example Achievement Data
-        # =========================
-        self.achievements = [
-            "🐣 First Launch",
-            "🍖 Feed Pet 10 Times",
-            "🎮 Played 20 Actions",
-            "💤 Keep Pet Alive 1 Hour",
-            "👑 Unlock Golden Finger"
-        ]
-
     # =========================
-    # Achievement Window
+    # Advancement Window
     # =========================
-    def show_achievements(self):
-        achievement_text = "\n".join(self.achievements)
+    def show_advancements(self):
+        advancement_text = (self.parent_window.advancement_manager.get_advancement_text())
 
-        QMessageBox.information(
-            self,
-            "Achievements",
-            achievement_text
-        )
+        QMessageBox.information(self,"Advancements",advancement_text)
 
     # =========================
     # Golden Finger Toggle
@@ -123,11 +108,16 @@ class SettingsApp(QWidget):
     # =========================
     def feed_pet(self):
         if self.pet:
-            self.pet.hunger = min(100, self.pet.hunger + 20)
+            self.pet.hunger = min(100,self.pet.hunger + 20)
 
+        self.parent_window.advancement_manager.add_progress(
+            "feed_10"
+        )
     def play_action(self):
         if self.pet:
             self.pet.trigger_random_action()
+
+            self.parent_window.advancement_manager.add_progress("play_20")
 
     # =========================
     # Volume Functions
