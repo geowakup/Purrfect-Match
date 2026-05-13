@@ -8,6 +8,7 @@ from Todo import TodoApp
 from Setting import SettingsApp
 from CharacterSelect import CharacterSelectApp
 from advancement import AdvancementsManager
+from styles import load_theme
 
 # =========================
 # PET LOGIC (Person 1)
@@ -328,7 +329,8 @@ class PetWindow(QWidget):
 # =========================
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
+    
+    app.setStyleSheet(load_theme("pink"))
     window = PetWindow()
     window.show()
 
