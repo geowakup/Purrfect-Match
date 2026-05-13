@@ -1,8 +1,7 @@
-#------------ Pink Theme ------------
 QWidget {
     background-color: #fff0f5;
     color: #333333;
-    font-family: Segoe UI;
+    font-family: "Segoe UI";
     font-size: 13px;
 }
 
@@ -37,91 +36,6 @@ QSlider::groove:horizontal {
 
 QSlider::handle:horizontal {
     background: #ff7aa2;
-    width: 14px;
-    border-radius: 7px;
-}
-
-# ------------ Dark Theme ------------
-QWidget {
-    background-color: #2b2b2b;
-    color: white;
-    font-family: Segoe UI;
-    font-size: 13px;
-}
-
-QPushButton {
-    background-color: #444444;
-    color: white;
-    border-radius: 12px;
-    padding: 6px;
-    font-weight: bold;
-}
-
-QPushButton:hover {
-    background-color: #666666;
-}
-
-QPushButton:pressed {
-    background-color: #333333;
-}
-
-QListWidget {
-    background-color: #3a3a3a;
-    border-radius: 10px;
-}
-
-QSlider::groove:horizontal {
-    height: 6px;
-    background: #555555;
-    border-radius: 3px;
-}
-
-QSlider::handle:horizontal {
-    background: #aaaaaa;
-    width: 14px;
-    border-radius: 7px;
-}
-
-# ------------ Cyber Theme ------------
-QWidget {
-    background-color: #111111;
-    color: #00ffff;
-    font-family: Consolas;
-    font-size: 13px;
-}
-
-QPushButton {
-    background-color: #222222;
-    color: #00ffff;
-    border: 2px solid #00ffff;
-    border-radius: 12px;
-    padding: 6px;
-    font-weight: bold;
-}
-
-QPushButton:hover {
-    background-color: #00ffff;
-    color: black;
-}
-
-QPushButton:pressed {
-    background-color: #00bbbb;
-}
-
-QListWidget {
-    background-color: #1a1a1a;
-    border: 2px solid #00ffff;
-    border-radius: 10px;
-}
-
-QSlider::groove:horizontal {
-    height: 6px;
-    background: #333333;
-    border-radius: 3px;
-}
-
-QSlider::handle:horizontal {
-    background: #00ffff;
     width: 14px;
     border-radius: 7px;
 }
