@@ -1,4 +1,4 @@
-from database import Database
+from system. database import Database
 
 class QuestSystem:
     def __init__(self):
@@ -18,12 +18,14 @@ class QuestSystem:
                     "name": "Complete 1 task",
                     "progress": 0,
                     "goal": 1,
+                    "reward" : 20,
                     "completed": False
                 },
                 {
                     "name": "Open app 3 times",
                     "progress": 0,
                     "goal": 3,
+                    "reward" : 30,
                     "completed": False
                 }
             ]

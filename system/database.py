@@ -6,19 +6,18 @@ from datetime import datetime
 class Database:
     def __init__(self, data_folder="data"):
         self.data_folder = data_folder
+
         os.makedirs(self.data_folder, exist_ok=True)
 
         # define your "tables"
         self.files = {
+            "pets": "pet.json",
             "tasks": "tasks.json",
-            "quests": "quests.json",
-            "pet": "pet.json",
             "stats": "stats.json",
-            "tasks.json": "tasks.json"
+            "quests.json": "quests.json"
         }
 
         self._initialize_files()
-
     # -------------------------
     # INITIALIZATION
     # -------------------------

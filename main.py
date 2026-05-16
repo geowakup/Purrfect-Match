@@ -1,47 +1,43 @@
-from system.database import Database
+from system.pet_manager import Pet
+from system.reward_manager import RewardSystem
 from system.task_manager import TaskSystem
+from system.quest_system import QuestSystem
+from system.database import Database
+import time
 
+def run_demo():
+    db = Database("data.json")
+    pet = Pet("Buddy")
+    rewards = RewardSystem()
+    tasks = TaskSystem()
+    quests = QuestSystem()
 
-# INITIALISE DATABASE
+    # Update pet state
+    pet.update()
+    print("Pet state:", pet.get_state())
 
-db = Database()
+    # Feed pet
+    pet.feed(20)
+    rewards.add_reward(10, "Fed the pet")
+    print("After feeding:", pet.get_state())
 
+    # Add and complete a task
+    tasks.add_task("Finish coding project")
+    tasks.complete_task(0)
+    rewards.add_reward(20, "Completed a task")
+    print("Tasks:", tasks.get_tasks())
 
-# CONNECT SYSTEMS
+    # Quest progress
+    quests.update_progress("Complete 1 task")
+    quests.update_progress("Open app 3 times")
+    print("Quests:", quests.get_quests())
 
-task_system = TaskSystem()
-# HELPER FUNCTION
+    # Save everything
+    db.save("pets", [pet.get_state()])
+    db.save("tasks", tasks.get_tasks())
+    db.save("quests.json", quests.get_quests())
+    db.save("stats", {"coins": rewards.get_balance()})
+    print("Database saved successfully.")
 
-def display_tasks(tasks):
-    print("\n=== TASK LIST ===")
-    for i, task in enumerate(tasks):
-        status = "✔ Completed" if task["completed"] else "✘ Pending"
-        deadline = task.get("deadline", "No deadline")
-        print(f"{i}. {task['title']} | {deadline} | {status}")
-
-# DEMO / TEST DATA
-print("\n=== ADDING TASKS ===")
-task_system.add_task("Complete 1 task (Quest requirement)")
-task_system.add_task("Open app 3 times (Quest requirement)")
-task_system.add_task("Finish assignment submission")
-
-# Mark one task as complete (testing reward trigger later)
-task_system.complete_task(0)
-
-# DISPLAY TASKS
-tasks = task_system.get_tasks()
-display_tasks(tasks)
-
-# PLACEHOLDER FOR FUTURE SYSTEMS
-print("\n=== QUEST SYSTEM CHECK ===")
-completed_count = sum(1 for t in tasks if t["completed"])
-if completed_count >= 1:
-    print("Quest progress achieved! 🎉 Reward unlocked (placeholder).")
-
-print("\n=== PET SYSTEM CHECK ===")
-if completed_count > 0:
-    print("🐾 Pet is happy because you completed tasks!")
-else:
-    print("🐾 Pet is waiting for you to complete tasks...")
-
-print("\nSystem running successfully ")
+if __name__ == "__main__":
+    run_demo()
