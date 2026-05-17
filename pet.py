@@ -1,4 +1,3 @@
-from pet import Pet
 import random
 
 class Pet:
@@ -6,27 +5,30 @@ class Pet:
 
         # Core attributes
         self.name = name
-        self.hunger = 100
-        self.happiness = 100
-        self.energy = 100
-        self.cleanliness = 100
+        self.hunger = 50
+        self.happiness = 50
+        self.energy = 50
+        self.cleanliness = 50
 
-        # GUI-compatible state system
+        # GUI state system
         self.state = "happy"
         self.action = None
         self.action_timer = 0
+
+        self.alive = True
+        self.age = 0
 
     # -------------------------
     # STATE SYSTEM
     # -------------------------
     def update_state(self):
 
-        # If performing action, override mood
+        # Action overrides mood
         if self.action is not None:
             self.state = self.action
             return
 
-        # Priority-based mood logic
+        # Mood priority system
         if self.hunger <= 20:
             self.state = "starving"
         elif self.hunger <= 40:
@@ -41,14 +43,14 @@ class Pet:
             self.state = "happy"
 
     # -------------------------
-    # RANDOM ACTION SYSTEM
+    # RANDOM ACTIONS
     # -------------------------
     def trigger_random_action(self):
         self.action = random.choice(["jump", "roll", "sleep"])
         self.action_timer = 10
 
     # -------------------------
-    # USER INTERACTIONS
+    # INTERACTIONS
     # -------------------------
     def feed(self):
         self.hunger = min(100, self.hunger + 15)
@@ -68,26 +70,27 @@ class Pet:
         self.update_state()
 
     # -------------------------
-    # UPDATE LOOP (TICK)
+    # MAIN UPDATE LOOP
     # -------------------------
     def update(self):
 
-        # Stat decay
+        print("Pet update running")
+
+        # Decay stats
         self.hunger = max(0, self.hunger - 1)
         self.energy = max(0, self.energy - 1)
         self.cleanliness = max(0, self.cleanliness - 1)
 
-        # Conditional happiness decay
+        # Happiness decay
         if self.hunger <= 30 or self.energy <= 30:
             self.happiness = max(0, self.happiness - 1)
 
-        # Action timer system
+        # Action timer
         if self.action_timer > 0:
             self.action_timer -= 1
         else:
             self.action = None
 
-        # Update final state
         self.update_state()
 
     # -------------------------
@@ -103,3 +106,18 @@ class Pet:
             "state": self.state,
             "action": self.action
         }
+    
+# =========================
+# TEST
+# =========================
+if __name__ == "__main__":
+
+    pet = Pet()
+
+    print("Pet class is working!")
+    print(pet.status())
+
+    pet.feed()
+
+    print("After feeding:")
+    print(pet.status())
