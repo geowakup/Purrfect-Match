@@ -55,6 +55,7 @@ from Setting import SettingsApp
 from CharacterSelect import CharacterSelectApp
 from advancement import AdvancementsManager
 from styles import load_theme
+from decoration import setup_decorations, add_glow
 
 
 # =========================
@@ -83,7 +84,9 @@ class PetWindow(QWidget):
         self.character_window = None
         
         self.current_character = "firefly"
-
+        
+        setup_decorations(self)
+    
 # ---------------------------- Window setup ----------------------------
         self.setWindowTitle("Desktop Pet")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
@@ -131,12 +134,14 @@ class PetWindow(QWidget):
         self.character_button.setStyleSheet("""QPushButton {background-color: rgba(80, 200, 120, 220);color: white;border-radius: 10px;font-weight: bold;}QPushButton:hover {background-color: rgba(120, 230, 160, 255);}""")
 
         self.character_button.hide()
-
+        add_glow(self.character_button, "#7affb2")
+    
 #---------------------------- To-Do Button ----------------------------
         self.todo_button = QPushButton("To-Do", self)
         self.todo_button.setGeometry(19, 200, 55, 30)
         self.todo_button.setFocusPolicy(Qt.StrongFocus)
         self.todo_button.clicked.connect(self.open_todo)
+        add_glow(self.todo_button)
 
 #---------------------------- Settings Button ----------------------------
         self.settings_button = QPushButton("Settings", self)
@@ -147,7 +152,8 @@ class PetWindow(QWidget):
         self.settings_button.setStyleSheet("""QPushButton {background-color: rgba(80, 80, 255, 220);color: white;border-radius: 10px;font-weight: bold;}QPushButton:hover {background-color: rgba(120, 120, 255, 255);}""")
 
         self.settings_button.hide()
-
+        add_glow(self.settings_button, "#7aa2ff")
+    
 # ------------------------ Button Hover + Style------------------
         self.hover_timer = QTimer()
         self.hover_timer.timeout.connect(self.check_hover)
