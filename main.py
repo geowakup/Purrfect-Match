@@ -9,6 +9,8 @@ from PySide6.QtGui import QMovie, QCursor
 from Todo import TodoApp
 from Setting import SettingsApp
 from CharacterSelect import CharacterSelectApp
+from advancement import AdvancementsManager
+from styles import load_theme
 
 
 # =========================
@@ -31,6 +33,8 @@ class PetWindow(QWidget):
         self.todo_window = None
 
         self.drag_pos = None
+
+        self.advancement_manager = AdvancementsManager()
 
         self.character_window = None
         
@@ -209,6 +213,7 @@ class PetWindow(QWidget):
             self.settings_window.setWindowFlag(Qt.WindowStaysOnTopHint, True)
 
             self.settings_window.pet = self.pet
+            self.settings_window.parent_window = self
 
             self.settings_window.show()
             self.settings_window.raise_()
@@ -233,6 +238,10 @@ class PetWindow(QWidget):
 
         # Update pet
         self.pet.update()
+        
+        if self.pet.hunger > 0:
+            self.advancement_manager.add_progress("alive_1_hour",0.2)
+
 
         state = self.pet.state
 
@@ -308,8 +317,11 @@ class PetWindow(QWidget):
 # =========================
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
+    
+    app.setStyleSheet(load_theme("pink"))
     window = PetWindow()
     window.show()
 
     sys.exit(app.exec())
+
+    
