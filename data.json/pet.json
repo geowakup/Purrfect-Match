@@ -1,0 +1,9 @@
+[
+    {
+        "name": "Buddy",
+        "hunger": 100,
+        "happiness": 100,
+        "energy": 100.0,
+        "mood": "happy"
+    }
+]
