@@ -1,6 +1,7 @@
 import sys
 import os
 import random
+from timer_loop import TimerLoop 
 from pet_lifecycle import PetLifecycle 
 from pet import Pet 
 from PySide6.QtWidgets import QApplication, QLabel, QWidget, QPushButton
@@ -71,9 +72,13 @@ class PetWindow(QWidget):
         self.current_gif = os.path.join(self.BASE_DIR, "firefly_dance.gif")
 
 #---------------------------- Timer ----------------------------
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.game_loop)
-        self.timer.start(200)
+        self.timer_loop = TimerLoop(
+            self.pet,
+            callback=self.game_loop,
+            interval=200
+        )
+
+        self.timer_loop.start()
 
 #---------------------------- Character Select Button ----------------------------
         self.character_button = QPushButton("Character", self)

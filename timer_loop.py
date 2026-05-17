@@ -46,11 +46,6 @@ class TimerLoop:
             self.pet.trigger_random_action()
 
         # -------------------------
-        # UPDATE PET
-        # -------------------------
-        self.pet.update()
-
-        # -------------------------
         # DISPLAY STATUS
         # -------------------------
         print("\n====================")
