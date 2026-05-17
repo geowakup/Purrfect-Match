@@ -1,6 +1,8 @@
 import sys
 import os
 import random
+from pet_lifecycle import PetLifecycle 
+from pet import Pet 
 from PySide6.QtWidgets import QApplication, QLabel, QWidget, QPushButton
 from PySide6.QtCore import Qt, QTimer, QSize, QPropertyAnimation
 from PySide6.QtGui import QMovie, QCursor
@@ -10,36 +12,7 @@ from CharacterSelect import CharacterSelectApp
 from advancement import AdvancementsManager
 from styles import load_theme
 
-# =========================
-# PET LOGIC (Person 1)
-# ========================
-class Pet:
-    def __init__(self):
-        self.hunger = 100
-        self.state = "happy"
 
-        self.action = None
-        self.action_timer = 0   
-
-    def update(self):
-        self.hunger = max(0, self.hunger - 1)
-
-        if self.action_timer > 0:
-           self.state = self.action
-           self.action_timer -= 1
-           return
-
-        if self.hunger <= 0:
-           self.state = "starving"
-        elif self.hunger <= 30:
-           self.state = "hungry"
-        else:
-           self.state = "happy"
-
-    def trigger_random_action(self):
-        self.action = random.choice(["jump", "roll", "sleep"])
-        self.action_timer = 10 
-    
 # =========================
 # MAIN WINDOW (Person 2)
 # =========================
@@ -48,6 +21,8 @@ class PetWindow(QWidget):
         super().__init__()
 
         self.pet = Pet()
+        self.lifecycle = PetLifecycle(self.pet) 
+        self.lifecycle.spawn()
 
         self.is_holding = False
 
@@ -253,7 +228,15 @@ class PetWindow(QWidget):
             if self.pet.action == "petting":
                 self.pet.action = None
                 self.pet.action_timer = 0
-        
+
+        # Idle actions
+        self.lifecycle.idle_behavior()
+
+        # Death check
+        if self.lifecycle.check_death():
+            print("Pet died")
+
+        # Update pet
         self.pet.update()
         
         if self.pet.hunger > 0:
@@ -262,20 +245,25 @@ class PetWindow(QWidget):
 
         state = self.pet.state
 
-        if state == "happy":
-            new_file = f"{self.current_character}_idle.gif"
-        elif state == "hungry":
-            new_file = f"{self.current_character}_hungry.gif"
-        elif state == "starving":
-            new_file = f"{self.current_character}_starving.gif"
-        elif state == "petting":
-            new_file = f"{self.current_character}_petting.gif"
-        elif state == "jump":
-            new_file = f"{self.current_character}_jump.gif"
-        elif state == "roll":
-            new_file = f"{self.current_character}_roll.gif"
-        elif state == "sleep":
-            new_file = f"{self.current_character}_sleep.gif"
+        state_gifs = {
+            "happy": f"{self.current_character}_idle.gif",
+            "hungry": f"{self.current_character}_hungry.gif",
+            "starving": f"{self.current_character}_starving.gif",
+            "petting": f"{self.current_character}_petting.gif",
+            "jump": f"{self.current_character}_jump.gif",
+            "roll": f"{self.current_character}_roll.gif",
+            "sleep": f"{self.current_character}_sleep.gif",
+
+            # New moods
+            "sleepy": f"{self.current_character}_sleep.gif",
+            "dirty": f"{self.current_character}_idle.gif",
+            "sad": f"{self.current_character}_hungry.gif",
+        }
+
+        new_file = state_gifs.get(
+            state,
+            f"{self.current_character}_idle.gif"
+        )
         
         new_path = os.path.join(self.BASE_DIR, new_file)
 
