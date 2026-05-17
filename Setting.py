@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import (
+    QApplication,
     QWidget,
     QVBoxLayout,
     QPushButton,
@@ -8,6 +9,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
+from styles import load_theme
 
 
 # =========================
@@ -21,6 +23,30 @@ class SettingsApp(QWidget):
         self.resize(300, 450)
 
         layout = QVBoxLayout()
+        
+        #=========================
+        # Theme Button
+        #=========================
+        self.pink_theme_btn = QPushButton("Pink Theme")
+        self.dark_theme_btn = QPushButton("Dark Theme")
+        self.cyber_theme_btn = QPushButton("Cyber Theme")
+
+        layout.addWidget(self.pink_theme_btn)
+        layout.addWidget(self.dark_theme_btn)
+        layout.addWidget(self.cyber_theme_btn)
+
+        self.pink_theme_btn.clicked.connect(
+        lambda: self.change_theme("pink")
+        )
+
+        self.dark_theme_btn.clicked.connect(
+        lambda: self.change_theme("dark")
+        )
+
+        self.cyber_theme_btn.clicked.connect(
+        lambda: self.change_theme("cyber")
+        )
+
 
         # =========================
         # Advancement Button
@@ -83,8 +109,12 @@ class SettingsApp(QWidget):
         )
 
         self.golden_mode = False
-
     # =========================
+    # Theme Change Function             
+    # =========================
+    def change_theme(self, theme_name):
+        app = QApplication.instance()
+        app.setStyleSheet(load_theme(theme_name))
     # Advancement Window
     # =========================
     def show_advancements(self):

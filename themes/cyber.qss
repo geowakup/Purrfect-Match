@@ -1,0 +1,42 @@
+QWidget {
+    background-color: #111111;
+    color: #00ffff;
+    font-family: Consolas;
+    font-size: 13px;
+}
+
+QPushButton {
+    background-color: #222222;
+    color: #00ffff;
+    border: 2px solid #00ffff;
+    border-radius: 12px;
+    padding: 6px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #00ffff;
+    color: black;
+}
+
+QPushButton:pressed {
+    background-color: #00bbbb;
+}
+
+QListWidget {
+    background-color: #1a1a1a;
+    border: 2px solid #00ffff;
+    border-radius: 10px;
+}
+
+QSlider::groove:horizontal {
+    height: 6px;
+    background: #333333;
+    border-radius: 3px;
+}
+
+QSlider::handle:horizontal {
+    background: #00ffff;
+    width: 14px;
+    border-radius: 7px;
+}
