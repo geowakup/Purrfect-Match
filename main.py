@@ -83,6 +83,7 @@ class PetWindow(QWidget):
         )
 
         self.timer_loop.start()
+        
 
 #---------------------------- Character Select Button ----------------------------
         self.character_button = QPushButton("Character", self)

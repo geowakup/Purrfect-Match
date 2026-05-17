@@ -65,3 +65,5 @@ class TimerLoop:
         self.timer.stop()
 
         print("Timer stopped.")
+
+        
