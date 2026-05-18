@@ -1,6 +1,7 @@
 import sys
 import os
 import random
+from save_system import SaveSystem 
 from timer_loop import TimerLoop 
 from pet_lifecycle import PetLifecycle 
 from pet import Pet 
@@ -22,6 +23,13 @@ class PetWindow(QWidget):
         super().__init__()
 
         self.pet = Pet()
+
+        self.save_system = SaveSystem()
+        loaded_character = self.save_system.load_pet(self.pet)
+
+        if loaded_character:
+            self.current_character = loaded_character
+        
         self.lifecycle = PetLifecycle(self.pet) 
         self.lifecycle.spawn()
 
@@ -83,7 +91,7 @@ class PetWindow(QWidget):
         )
 
         self.timer_loop.start()
-        
+
 
 #---------------------------- Character Select Button ----------------------------
         self.character_button = QPushButton("Character", self)
