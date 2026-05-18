@@ -53,3 +53,14 @@ class QuestSystem:
                     quest["completed"] = True
 
         self.save_quests(quests)
+
+    def reset_daily_quests(self):
+      quests = self.get_quests()
+
+      for quest in quests:
+        quest["progress"] = 0
+        quest["completed"] = False
+
+      self.db.save(self.filename, quests)
+
+      print("Daily quests reset successfully.")  

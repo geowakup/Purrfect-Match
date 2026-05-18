@@ -15,22 +15,30 @@ def run_demo():
     # Update pet state
     pet.update()
     print("Pet state:", pet.get_state())
-
-    # Feed pet
-    pet.feed(20)
-    rewards.add_reward(10, "Fed the pet")
-    print("After feeding:", pet.get_state())
-
+    
+    
     # Add and complete a task
     tasks.add_task("Finish coding project")
     tasks.complete_task(0)
     rewards.add_reward(20, "Completed a task")
+    if rewards.get_balance() >= 10:
+        pet.feed(20)
+        rewards.spend_reward(10, "Fed the pet")
+        print("Pet fed successfully!")
+    else:
+        print("Not enough coins to feed pet.")
+        print("After feeding:", pet.get_state())
+
     print("Tasks:", tasks.get_tasks())
 
     # Quest progress
     quests.update_progress("Complete 1 task")
     quests.update_progress("Open app 3 times")
+    quests.update_progress("Open app 3 times")
+    quests.update_progress("Open app 3 times")
+    quests.update_progress("Open app 3 times")
     print("Quests:", quests.get_quests())
+    quests.reset_daily_quests()
 
     # Save everything
     db.save("pets", [pet.get_state()])
