@@ -54,27 +54,34 @@ quest_title = tk.Label(
 )
 quest_title.pack(pady=10)
 
-# QUESTS
-for quest in quest_data:
+def load_quests():
 
-    quest_text = f"{quest['progress']}/{quest['goal']} - {quest['name']}"
+    quest_data = quests.get_quests()
 
-    quest_label = tk.Label(
-        window,
-        text=quest_text,
-        font=("Segoe UI", 12),
-        bg="#FFF0F5",
-        width=30,
-        pady=8
-    )
+    for quest in quest_data:
 
-    quest_label.pack(pady=5)
+        quest_text = f"{quest['progress']}/{quest['goal']} - {quest['name']}"
+
+        quest_label = tk.Label(
+            window,
+            text=quest_text,
+            font=("Segoe UI", 12),
+            bg="#FFF0F5",
+            width=30,
+            pady=8
+        )
+
+        quest_label.pack(pady=5)
+
+
+load_quests()
 
 def feed_pet():
 
     if rewards.get_balance() >= 10:
 
         rewards.spend_reward(10, "Fed pet")
+        quests.update_progress("Complete 1 task")
 
         coins.config(
             text=f" Coins: {rewards.get_balance()}"
