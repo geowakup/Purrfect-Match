@@ -1,15 +1,22 @@
+from system.reward_manager import RewardSystem
+from system.quest_system import QuestSystem
 import tkinter as tk
 
 # MAIN WINDOW
 window = tk.Tk()
+quests = QuestSystem()
+quest_data = quests.get_quests()
+rewards = RewardSystem()
+rewards.add_reward(20, "Starting coins")
+
 window.title("Purrfect Match 🐾")
-window.geometry("500x500")
+window.geometry("500x650")
 window.configure(bg="#FFE4EC")  # pastel pink background
 
 # TITLE
 title = tk.Label(
     window,
-    text="🐾 Purrfect Match 🐾",
+    text="🐾Purrfect Match 🐾",
     font=("Comic Sans MS", 22, "bold"),
     bg="#FFE4EC",
     fg="#FF4F87"
@@ -28,7 +35,7 @@ pet_label.pack()
 # COINS DISPLAY
 coins = tk.Label(
     window,
-    text="💰 Coins: 20",
+    text=" Coins: 20",
     font=("Comic Sans MS", 14, "bold"),
     bg="#FFF0F5",
     fg="#C71585",
@@ -40,7 +47,7 @@ coins.pack(pady=10)
 # QUEST TITLE
 quest_title = tk.Label(
     window,
-    text="🌟 Daily Quests 🌟",
+    text=" Daily Quests ",
     font=("Comic Sans MS", 16, "bold"),
     bg="#FFE4EC",
     fg="#DB3E6F"
@@ -48,30 +55,45 @@ quest_title = tk.Label(
 quest_title.pack(pady=10)
 
 # QUESTS
-quest1 = tk.Label(
-    window,
-    text="✅ Complete 1 task",
-    font=("Segoe UI", 12),
-    bg="#FFF0F5",
-    width=30,
-    pady=8
-)
-quest1.pack(pady=5)
+for quest in quest_data:
 
-quest2 = tk.Label(
-    window,
-    text="✅ Open app 3 times",
-    font=("Segoe UI", 12),
-    bg="#FFF0F5",
-    width=30,
-    pady=8
-)
-quest2.pack(pady=5)
+    quest_text = f"{quest['progress']}/{quest['goal']} - {quest['name']}"
 
+    quest_label = tk.Label(
+        window,
+        text=quest_text,
+        font=("Segoe UI", 12),
+        bg="#FFF0F5",
+        width=30,
+        pady=8
+    )
+
+    quest_label.pack(pady=5)
+
+def feed_pet():
+
+    if rewards.get_balance() >= 10:
+
+        rewards.spend_reward(10, "Fed pet")
+
+        coins.config(
+            text=f" Coins: {rewards.get_balance()}"
+        )
+
+        status.config(
+            text="🐱 Yum! Your pet is happy!"
+        )
+
+    else:
+
+        status.config(
+            text="😿 Not enough coins!" 
+        )
 # FEED BUTTON
 feed_button = tk.Button(
     window,
-    text="🍖 Feed Pet",
+        text="🍖 Feed Pet",
+    command=feed_pet,
     font=("Comic Sans MS", 13, "bold"),
     bg="#FF69B4",
     fg="white",
@@ -85,10 +107,10 @@ feed_button.pack(pady=25)
 # STATUS MESSAGE
 status = tk.Label(
     window,
-    text="✨ Your pet is happy today!",
+    text="🐱 Pet is waiting for food!",
     font=("Segoe UI", 11),
     bg="#FFE4EC",
-    fg="#8B3A62"
+    fg="#8B3A62",
 )
 status.pack()
 
