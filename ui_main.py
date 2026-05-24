@@ -5,6 +5,7 @@ import tkinter as tk
 # MAIN WINDOW
 window = tk.Tk()
 quests = QuestSystem()
+quests.update_progress("Open app 3 times")
 quest_data = quests.get_quests()
 rewards = RewardSystem()
 rewards.add_reward(20, "Starting coins")

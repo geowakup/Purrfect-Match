@@ -8,9 +8,9 @@
     },
     {
         "name": "Open app 3 times",
-        "progress": 0,
+        "progress": 3,
         "goal": 3,
         "reward": 30,
-        "completed": false
+        "completed": true
     }
 ]
