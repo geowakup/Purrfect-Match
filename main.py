@@ -31,7 +31,9 @@ class PetWindow(QWidget):
             self.current_character = loaded_character
         
         self.lifecycle = PetLifecycle(self.pet) 
-        self.lifecycle.spawn()
+
+        if not loaded_character:
+            self.lifecycle.spawn()
 
         self.is_holding = False
 
@@ -48,6 +50,12 @@ class PetWindow(QWidget):
         self.character_window = None
         
         self.current_character = "firefly"
+
+        self.save_system = SaveSystem()
+        loaded_character = self.save_system.load_pet(self.pet)
+
+        if loaded_character:
+            self.current_character = loaded_character
 
 # ---------------------------- Window setup ----------------------------
         self.setWindowTitle("Desktop Pet")
@@ -250,8 +258,7 @@ class PetWindow(QWidget):
         if self.lifecycle.check_death():
             print("Pet died")
 
-        # Update pet
-        self.pet.update()
+
         
         if self.pet.hunger > 0:
             self.advancement_manager.add_progress("alive_1_hour",0.2)

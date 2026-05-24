@@ -31,6 +31,9 @@ class SaveSystem:
             "alive": pet.alive,
             "age": pet.age,
 
+            "coins": pet.coins,
+            "inventory": pet.inventory,
+
             "character": character
         }
 
@@ -66,7 +69,10 @@ class SaveSystem:
 
         pet.alive = data["alive"]
         pet.age = data["age"]
+        pet.character = data["character"]
 
+        pet.coins = data["coins", 100]
+        pet.inventory = data["inventory", []]
         print("Pet loaded!")
 
         return data["character"]

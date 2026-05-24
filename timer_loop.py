@@ -9,7 +9,7 @@ from PySide6.QtCore import QTimer
 
 class TimerLoop:
 
-    def __init__(self, pet, callback=None, interval=200):
+    def __init__(self, pet, callback=None, interval=1000):
 
         self.pet = pet
 
