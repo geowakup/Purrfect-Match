@@ -8,6 +8,8 @@ quests = QuestSystem()
 quests.update_progress("Open app 3 times")
 quest_data = quests.get_quests()
 rewards = RewardSystem()
+hunger = 100
+happiness = 100
 rewards.add_reward(20, "Starting coins")
 
 window.title("Purrfect Match 🐾")
@@ -32,6 +34,17 @@ pet_label = tk.Label(
     bg="#FFE4EC"
 )
 pet_label.pack()
+stats = tk.Label(
+    window,
+    text="🍖 Hunger: 100\n😊 Happiness: 100",
+    font=("Comic Sans MS", 12),
+    bg="#FFF0F5",
+    fg="#8B3A62",
+    padx=15,
+    pady=10
+)
+
+stats.pack(pady=10)
 
 # COINS DISPLAY
 coins = tk.Label(
@@ -79,6 +92,8 @@ load_quests()
 
 def feed_pet():
 
+    global hunger, happiness
+
     if rewards.get_balance() >= 10:
 
         rewards.spend_reward(10, "Fed pet")
@@ -87,6 +102,14 @@ def feed_pet():
         coins.config(
             text=f" Coins: {rewards.get_balance()}"
         )
+        
+        hunger = min(hunger + 10, 100)
+        happiness = min(happiness + 5, 100)
+
+        stats.config(
+            text=f" Hunger:  {hunger}\n Happiness: {happiness}"
+        )
+
 
         status.config(
             text="🐱 Yum! Your pet is happy!"
@@ -121,6 +144,22 @@ status = tk.Label(
     fg="#8B3A62",
 )
 status.pack()
+
+def decay():
+
+    global hunger, happiness
+
+    hunger = max(hunger - 1, 0)
+    happiness = max(happiness - 1, 0)
+
+    stats.config(
+        text=f"🍖 Hunger: {hunger}\n😊 Happiness: {happiness}"
+    )
+
+    window.after(5000, decay)
+
+
+decay()
 
 # RUN WINDOW
 window.mainloop()
