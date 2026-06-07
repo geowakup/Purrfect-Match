@@ -9,7 +9,7 @@ from PySide6.QtCore import QTimer
 
 class TimerLoop:
 
-    def __init__(self, pet, callback=None, interval=200):
+    def __init__(self, pet, callback=None, interval=1000):
 
         self.pet = pet
 
@@ -46,11 +46,6 @@ class TimerLoop:
             self.pet.trigger_random_action()
 
         # -------------------------
-        # UPDATE PET
-        # -------------------------
-        self.pet.update()
-
-        # -------------------------
         # DISPLAY STATUS
         # -------------------------
         print("\n====================")
@@ -70,3 +65,5 @@ class TimerLoop:
         self.timer.stop()
 
         print("Timer stopped.")
+
+        
