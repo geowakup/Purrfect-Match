@@ -86,5 +86,16 @@
     {
         "task": "Finish coding project",
         "done": false
+<<<<<<< HEAD
+=======
+    },
+    {
+        "task": "Finish coding project",
+        "done": false
+    },
+    {
+        "task": "Finish coding project",
+        "done": false
+>>>>>>> e41f6b622351034b86b988c08c0c0bf9e8846089
     }
 ]
