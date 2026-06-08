@@ -15,22 +15,30 @@ def run_demo():
     # Update pet state
     pet.update()
     print("Pet state:", pet.get_state())
-
-    # Feed pet
-    pet.feed(20)
-    rewards.add_reward(10, "Fed the pet")
-    print("After feeding:", pet.get_state())
-
+    
+    
     # Add and complete a task
     tasks.add_task("Finish coding project")
     tasks.complete_task(0)
     rewards.add_reward(20, "Completed a task")
+    if rewards.get_balance() >= 10:
+        pet.feed(20)
+        rewards.spend_reward(10, "Fed the pet")
+        print("Pet fed successfully!")
+    else:
+        print("Not enough coins to feed pet.")
+        print("After feeding:", pet.get_state())
+
     print("Tasks:", tasks.get_tasks())
 
     # Quest progress
     quests.update_progress("Complete 1 task")
     quests.update_progress("Open app 3 times")
+    quests.update_progress("Open app 3 times")
+    quests.update_progress("Open app 3 times")
+    quests.update_progress("Open app 3 times")
     print("Quests:", quests.get_quests())
+    quests.reset_daily_quests()
 
     # Save everything
     db.save("pets", [pet.get_state()])
@@ -45,6 +53,8 @@ if __name__ == "__main__":
 import sys
 import os
 import random
+from save_system import SaveSystem 
+from timer_loop import TimerLoop 
 from pet_lifecycle import PetLifecycle 
 from pet import Pet 
 from PySide6.QtWidgets import QApplication, QLabel, QWidget, QPushButton
@@ -66,8 +76,17 @@ class PetWindow(QWidget):
         super().__init__()
 
         self.pet = Pet()
+
+        self.save_system = SaveSystem()
+        loaded_character = self.save_system.load_pet(self.pet)
+
+        if loaded_character:
+            self.current_character = loaded_character
+        
         self.lifecycle = PetLifecycle(self.pet) 
-        self.lifecycle.spawn()
+
+        if not loaded_character:
+            self.lifecycle.spawn()
 
         self.is_holding = False
 
@@ -84,9 +103,13 @@ class PetWindow(QWidget):
         self.character_window = None
         
         self.current_character = "firefly"
-        
-        setup_decorations(self)
-    
+
+        self.save_system = SaveSystem()
+        loaded_character = self.save_system.load_pet(self.pet)
+
+        if loaded_character:
+            self.current_character = loaded_character
+
 # ---------------------------- Window setup ----------------------------
         self.setWindowTitle("Desktop Pet")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
@@ -122,9 +145,14 @@ class PetWindow(QWidget):
         self.current_gif = os.path.join(self.BASE_DIR, "firefly_dance.gif")
 
 #---------------------------- Timer ----------------------------
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.game_loop)
-        self.timer.start(200)
+        self.timer_loop = TimerLoop(
+            self.pet,
+            callback=self.game_loop,
+            interval=200
+        )
+
+        self.timer_loop.start()
+
 
 #---------------------------- Character Select Button ----------------------------
         self.character_button = QPushButton("Character", self)
@@ -286,8 +314,7 @@ class PetWindow(QWidget):
         if self.lifecycle.check_death():
             print("Pet died")
 
-        # Update pet
-        self.pet.update()
+
         
         if self.pet.hunger > 0:
             self.advancement_manager.add_progress("alive_1_hour",0.2)
