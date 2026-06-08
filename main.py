@@ -5,12 +5,14 @@ from save_system import SaveSystem
 from timer_loop import TimerLoop 
 from pet_lifecycle import PetLifecycle 
 from pet import Pet 
+from shop_system import ShopSystem  
 from PySide6.QtWidgets import QApplication, QLabel, QWidget, QPushButton
 from PySide6.QtCore import Qt, QTimer, QSize, QPropertyAnimation
 from PySide6.QtGui import QMovie, QCursor
 from Todo import TodoApp
 from Setting import SettingsApp
 from CharacterSelect import CharacterSelectApp
+from shop_window import ShopWindow  
 from advancement import AdvancementsManager
 from styles import load_theme
 
@@ -48,6 +50,7 @@ class PetWindow(QWidget):
         self.advancement_manager = AdvancementsManager()
 
         self.character_window = None
+        self.shop_window = None
         
         self.current_character = "firefly"
 
@@ -158,6 +161,7 @@ class PetWindow(QWidget):
         self.anim.finished.connect(self.todo_button.hide)
         self.anim.finished.connect(self.settings_button.hide)
         self.anim.finished.connect(self.character_button.hide)
+        self.anim.finished.connect(self.shop_button.hide)
         self.anim.start()
 
 # ------------------------ Check and trigger ------------------------
@@ -169,6 +173,7 @@ class PetWindow(QWidget):
             self.todo_button.show()
             self.settings_button.show()
             self.character_button.show()
+            self.shop_button.show()
 
             self.anim.stop()
             self.anim.setStartValue(self.todo_button.windowOpacity())
@@ -203,6 +208,24 @@ class PetWindow(QWidget):
         self.character_window.raise_()
         self.character_window.activateWindow()
 
+# ------------------------
+# Open Shop Window
+# ------------------------
+    def open_shop(self):
+
+        if self.shop_window is None or not self.shop_window.isVisible():
+
+            self.shop_window = ShopWindow(self.pet)
+
+            self.shop_window.setWindowFlag(
+                Qt.WindowStaysOnTopHint,
+                True
+            )
+
+        self.shop_window.show()
+        self.shop_window.raise_()
+        self.shop_window.activateWindow()
+
 #------------------------ Change Character (called from character select) ------------------------
     def change_character(self, name):
         self.current_character = name   
@@ -227,6 +250,26 @@ class PetWindow(QWidget):
             self.movie.setScaledSize(QSize(200, 200))
             self.label.setMovie(self.movie)
             self.movie.start()
+
+            # ---------------------------- Shop Button ----------------------------
+        self.shop_button = QPushButton("Shop", self)
+        self.shop_button.setGeometry(78, 165, 70, 30)
+
+        self.shop_button.clicked.connect(self.open_shop)
+
+        self.shop_button.setStyleSheet("""
+        QPushButton {
+            background-color: rgba(255, 180, 0, 220);
+            color: white;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background-color: rgba(255, 210, 80, 255);
+        }
+        """)
+
+        self.shop_button.hide()
 
 # -------------------------- Setting --------------------------------------
     def open_settings(self):
