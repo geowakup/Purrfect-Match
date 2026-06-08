@@ -1,41 +1,191 @@
+/* =========================
+   MAIN WINDOW
+========================= */
 QWidget {
-    background-color: #fff0f5;
-    color: #333333;
+    background-color: #fff5fa;
+    color: #444444;
     font-family: "Segoe UI";
     font-size: 13px;
 }
 
+/* =========================
+   LABELS
+========================= */
+QLabel {
+    color: #d85c8d;
+    font-weight: bold;
+}
+
+/* =========================
+   BUTTONS
+========================= */
 QPushButton {
-    background-color: #ff7aa2;
+    background-color: qlineargradient(
+        spread:pad,
+        x1:0, y1:0,
+        x2:1, y2:1,
+        stop:0 #ff9ec4,
+        stop:1 #ff7aa2
+    );
+
     color: white;
-    border-radius: 12px;
-    padding: 6px;
+    border-radius: 15px;
+    padding: 8px 14px;
     font-weight: bold;
     border: 2px solid white;
+
+    /* fake shadow */
+    border-bottom: 4px solid #d95b86;
 }
 
+/* Hover sparkle effect */
 QPushButton:hover {
-    background-color: #ff95b5;
+    background-color: #ffb6cf;
+    border: 2px solid #ffe4ec;
 }
 
+/* Click effect */
 QPushButton:pressed {
     background-color: #e85f89;
+    border-bottom: 1px solid #d95b86;
+    padding-top: 10px;
 }
 
+/* =========================
+   LIST WIDGET
+========================= */
 QListWidget {
     background-color: white;
-    border-radius: 10px;
-    padding: 5px;
+    border-radius: 15px;
+    padding: 8px;
+    border: 2px solid #ffd6e7;
 }
 
+/* Selected item */
+QListWidget::item:selected {
+    background-color: #ffc8dd;
+    border-radius: 8px;
+    color: #a8325f;
+}
+
+/* Hover item */
+QListWidget::item:hover {
+    background-color: #ffe5f0;
+}
+
+/* =========================
+   SLIDER
+========================= */
 QSlider::groove:horizontal {
-    height: 6px;
-    background: #ffc0cb;
-    border-radius: 3px;
+    height: 8px;
+    background: #ffd1df;
+    border-radius: 4px;
+}
+
+QSlider::sub-page:horizontal {
+    background: #ff7aa2;
+    border-radius: 4px;
 }
 
 QSlider::handle:horizontal {
+    background: white;
+    border: 3px solid #ff7aa2;
+    width: 18px;
+    margin: -5px 0;
+    border-radius: 9px;
+}
+
+/* =========================
+   TEXT BOXES
+========================= */
+QLineEdit, QTextEdit {
+    background-color: white;
+    border: 2px solid #ffd1df;
+    border-radius: 12px;
+    padding: 6px;
+}
+
+/* Focus glow */
+QLineEdit:focus, QTextEdit:focus {
+    border: 2px solid #ff7aa2;
+}
+
+/* =========================
+   SCROLLBAR
+========================= */
+QScrollBar:vertical {
+    background: transparent;
+    width: 12px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: #ffb6cf;
+    border-radius: 6px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #ff8fb3;
+}
+
+/* =========================
+   GROUP BOX / PANELS
+========================= */
+QGroupBox {
+    border: 2px solid #ffd6e7;
+    border-radius: 15px;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: rgba(255,255,255,0.7);
+}
+
+QGroupBox:title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #ff5f95;
+    font-weight: bold;
+}
+
+/* =========================
+   CHECKBOXES
+========================= */
+QCheckBox {
+    spacing: 8px;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+}
+
+QCheckBox::indicator:unchecked {
+    border: 2px solid #ff9ec4;
+    border-radius: 6px;
+    background: white;
+}
+
+QCheckBox::indicator:checked {
     background: #ff7aa2;
-    width: 14px;
-    border-radius: 7px;
+    border: 2px solid white;
+    border-radius: 6px;
+}
+
+/* =========================
+   CUTE DECORATIVE TITLE
+========================= */
+QMainWindow {
+    background-color: #fff5fa;
+}
+
+/* =========================
+   TOOLTIP
+========================= */
+QToolTip {
+    background-color: #ffeff5;
+    color: #d85c8d;
+    border: 2px solid #ffb6cf;
+    border-radius: 8px;
+    padding: 5px;
 }
