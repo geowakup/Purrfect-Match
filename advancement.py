@@ -7,7 +7,8 @@ class AdvancementsManager:
         self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         self.save_file = os.path.join(
             self.BASE_DIR,
-            "save_data.json"
+            "data",
+            "advancements.json"
         )
 
         self.advancements = {
