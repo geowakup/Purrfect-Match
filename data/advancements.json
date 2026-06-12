@@ -1,0 +1,28 @@
+{
+    "first_launch": {
+        "name": "\ud83d\udc23 First Launch",
+        "unlocked": true
+    },
+    "feed_10": {
+        "name": "\ud83c\udf56 Feed Pet 10 Times",
+        "progress": 0,
+        "goal": 10,
+        "unlocked": false
+    },
+    "play_20": {
+        "name": "\ud83c\udfae Played 20 Actions",
+        "progress": 0,
+        "goal": 20,
+        "unlocked": false
+    },
+    "alive_1_hour": {
+        "name": "\ud83d\udca4 Keep Pet Alive 1 Hour",
+        "progress": 205.2,
+        "goal": 3600,
+        "unlocked": false
+    },
+    "golden_finger": {
+        "name": "\ud83d\udc51 Unlock Golden Finger",
+        "unlocked": false
+    }
+}

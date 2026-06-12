@@ -5,10 +5,12 @@ from PySide6.QtWidgets import (
     QPushButton,
     QLabel,
     QSlider,
-    QMessageBox
+    QMessageBox,
+    QInputDialog
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
+from shop_system import ShopSystem
 from styles import load_theme
 
 
@@ -54,6 +56,15 @@ class SettingsApp(QWidget):
         self.advancement_button = QPushButton("Advancements")
         self.advancement_button.clicked.connect(self.show_advancements)
         layout.addWidget(self.advancement_button)
+
+        # =========================
+        # Shop Button
+        # =========================
+        self.shop_button = QPushButton("Open Shop")
+        self.shop_button.clicked.connect(self.open_shop)
+        layout.addWidget(self.shop_button)
+
+        self.shop_system = ShopSystem()
 
         # =========================
         # Hidden Golden Finger Buttons
@@ -161,3 +172,35 @@ class SettingsApp(QWidget):
         self.bgm_label.setText(
             f"Background Music Volume: {value}"
         )
+
+    def open_shop(self):
+        if self.pet is None:
+            QMessageBox.warning(self, "Shop", "Pet data not available.")
+            return
+
+        item_lines = []
+        for item_name, item_data in self.shop_system.items.items():
+            price = item_data.get("price", 0)
+            hunger = item_data.get("hunger", 0)
+            happiness = item_data.get("happiness", 0)
+            item_lines.append(
+                f"{item_name}: {price} coins, hunger +{hunger}, happiness +{happiness}"
+            )
+
+        item_list = "\n".join(item_lines)
+        item_choice, ok = QInputDialog.getText(
+            self,
+            "Shop",
+            f"Available items:\n{item_list}\n\nEnter item name to buy:",
+        )
+
+        if not ok or not item_choice:
+            return
+
+        item_choice = item_choice.strip().lower()
+        success, message = self.shop_system.buy_item(self.pet, item_choice)
+
+        if success:
+            QMessageBox.information(self, "Shop", message)
+        else:
+            QMessageBox.warning(self, "Shop", message)

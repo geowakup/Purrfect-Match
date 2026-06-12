@@ -1,16 +1,1 @@
-[
-    {
-        "name": "Complete 1 task",
-        "progress": 1,
-        "goal": 1,
-        "reward": 20,
-        "completed": true
-    },
-    {
-        "name": "Open app 3 times",
-        "progress": 3,
-        "goal": 3,
-        "reward": 30,
-        "completed": true
-    }
-]
+[]

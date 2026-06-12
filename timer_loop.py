@@ -38,7 +38,7 @@ class TimerLoop:
     # UPDATE LOOP
     # =========================
     def update_loop(self):
-
+        self.pet.update()
         # -------------------------
         # RANDOM ACTION SYSTEM
         # -------------------------

@@ -9,8 +9,10 @@ import os
 class SaveSystem:
 
     def __init__(self, filename="save_data.json"):
-
-        self.filename = filename
+        self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.data_folder = os.path.join(self.BASE_DIR, "data")
+        os.makedirs(self.data_folder, exist_ok=True)
+        self.filename = os.path.join(self.data_folder, filename)
 
     # =========================
     # SAVE
@@ -58,7 +60,8 @@ class SaveSystem:
 
             data = json.load(file)
 
-        pet.name = data["name"]
+        print (data)
+        pet.name = data.get("name", "Firefly")
         pet.hunger = data["hunger"]
         pet.happiness = data["happiness"]
         pet.energy = data["energy"]
@@ -71,8 +74,8 @@ class SaveSystem:
         pet.age = data["age"]
         pet.character = data["character"]
 
-        pet.coins = data["coins", 100]
-        pet.inventory = data["inventory", []]
+        pet.coins = data.get("coins", 100)
+        pet.inventory = data.get("inventory", [])
         print("Pet loaded!")
 
         return data["character"]

@@ -1,71 +1,22 @@
-from system.pet_manager import Pet
-from system.reward_manager import RewardSystem
-from system.task_manager import TaskSystem
-from system.quest_system import QuestSystem
-from system.database import Database
-import time
-
-def run_demo():
-    db = Database("data.json")
-    pet = Pet("Buddy")
-    rewards = RewardSystem()
-    tasks = TaskSystem()
-    quests = QuestSystem()
-
-    # Update pet state
-    pet.update()
-    print("Pet state:", pet.get_state())
-    
-    
-    # Add and complete a task
-    tasks.add_task("Finish coding project")
-    tasks.complete_task(0)
-    rewards.add_reward(20, "Completed a task")
-    if rewards.get_balance() >= 10:
-        pet.feed(20)
-        rewards.spend_reward(10, "Fed the pet")
-        print("Pet fed successfully!")
-    else:
-        print("Not enough coins to feed pet.")
-        print("After feeding:", pet.get_state())
-
-    print("Tasks:", tasks.get_tasks())
-
-    # Quest progress
-    quests.update_progress("Complete 1 task")
-    quests.update_progress("Open app 3 times")
-    quests.update_progress("Open app 3 times")
-    quests.update_progress("Open app 3 times")
-    quests.update_progress("Open app 3 times")
-    print("Quests:", quests.get_quests())
-    quests.reset_daily_quests()
-
-    # Save everything
-    db.save("pets", [pet.get_state()])
-    db.save("tasks", tasks.get_tasks())
-    db.save("quests.json", quests.get_quests())
-    db.save("stats", {"coins": rewards.get_balance()})
-    print("Database saved successfully.")
-
-
-if __name__ == "__main__":
-    run_demo()
-import sys
 import os
-import random
-from save_system import SaveSystem 
-from timer_loop import TimerLoop 
-from pet_lifecycle import PetLifecycle 
-from pet import Pet 
-from PySide6.QtWidgets import QApplication, QLabel, QWidget, QPushButton
-from PySide6.QtCore import Qt, QTimer, QSize, QPropertyAnimation
-from PySide6.QtGui import QMovie, QCursor
-from Todo import TodoApp
-from Setting import SettingsApp
+import sys
+
+from PySide6.QtCore import Qt, QPropertyAnimation, QTimer, QSize
+from PySide6.QtGui import QMovie, QCursor, QPixmap
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QWidget
+
 from CharacterSelect import CharacterSelectApp
+from Setting import SettingsApp
+from Todo import TodoApp
 from advancement import AdvancementsManager
+from cat import CatCharacter
+from decoration import add_glow
+from firefly import FireflyCharacter
+from pet import Pet
+from pet_lifecycle import PetLifecycle
+from save_system import SaveSystem
+from timer_loop import TimerLoop
 from styles import load_theme
-from decoration import setup_decorations, add_glow
 
 
 # =========================
@@ -76,129 +27,192 @@ class PetWindow(QWidget):
         super().__init__()
 
         self.pet = Pet()
-
         self.save_system = SaveSystem()
-        loaded_character = self.save_system.load_pet(self.pet)
-
-        if loaded_character:
-            self.current_character = loaded_character
-        
-        self.lifecycle = PetLifecycle(self.pet) 
-
-        if not loaded_character:
-            self.lifecycle.spawn()
-
-        self.is_holding = False
-
-        self.dragging = False
-
-        self.settings_window = None
-
-        self.todo_window = None
-
+        self.current_character = "firefly"
+        self.characters = {
+            "firefly": FireflyCharacter(),
+            "cat": CatCharacter()
+        }
+        self.current_asset_path = ""
+        self.movie = None
         self.drag_pos = None
-
+        self.is_holding = False
+        self.dragging = False
+        self.settings_window = None
+        self.todo_window = None
+        self.character_window = None
         self.advancement_manager = AdvancementsManager()
 
-        self.character_window = None
-        
-        self.current_character = "firefly"
+        self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.ASSET_DIR = os.path.join(self.BASE_DIR, "assets", "images")
 
-        self.save_system = SaveSystem()
-        loaded_character = self.save_system.load_pet(self.pet)
+        self._load_saved_character()
+        self.lifecycle = PetLifecycle(self.pet)
+        if not self.loaded_character:
+            self.lifecycle.spawn()
 
-        if loaded_character:
-            self.current_character = loaded_character
+        self._setup_window()
+        self._setup_label()
+        self._setup_buttons()
+        self._setup_timers()
 
-# ---------------------------- Window setup ----------------------------
+        self.load_character_asset(self.current_character)
+
+    def _load_saved_character(self):
+        self.loaded_character = self.save_system.load_pet(self.pet)
+        if self.loaded_character:
+            self.current_character = self.loaded_character
+
+    def _setup_window(self):
         self.setWindowTitle("Desktop Pet")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WA_NoSystemBackground, True)
         self.setStyleSheet("background: transparent; border:none;")
 
-# ---------------------------- Label (GIF display) ----------------------------
+    def _setup_label(self):
         self.label = QLabel(self)
         self.label.setAttribute(Qt.WA_TranslucentBackground)
-        self.label.setAttribute(Qt.WA_TransparentForMouseEvents) 
+        self.label.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.label.setStyleSheet("background: transparent;")
-
-# ---------------------------- Size ----------------------------
         self.resize(220, 240)
         self.label.setGeometry(0, 0, 200, 200)
 
-# ---------------------------- Paths ----------------------------
-        self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        self.current_gif = ""
+    def _create_button(self, text, geometry, callback, stylesheet, hidden=True):
+        button = QPushButton(text, self)
+        button.setGeometry(*geometry)
+        button.setFocusPolicy(Qt.StrongFocus)
+        button.clicked.connect(callback)    
+        button.setStyleSheet(stylesheet)
+        if hidden:
+            button.hide()
+        return button
 
-# ---------------------------- GIF setup ----------------------------
-        self.movie = QMovie(os.path.join(self.BASE_DIR, "firefly_dance.gif"))
-        print("GIF valid:", self.movie.isValid())
-
-        self.movie.setScaledSize(QSize(200, 200))
-        self.movie.setCacheMode(QMovie.CacheAll)
-        self.movie.setSpeed(100)
-
-        self.label.setMovie(self.movie)
-        self.movie.start()
-
-        self.current_gif = os.path.join(self.BASE_DIR, "firefly_dance.gif")
-
-#---------------------------- Timer ----------------------------
-        self.timer_loop = TimerLoop(
-            self.pet,
-            callback=self.game_loop,
-            interval=200
+    def _setup_buttons(self):
+        self.character_button = self._create_button(
+            "Character",
+            (78, 200, 70, 30),
+            self.open_character,
+            """
+            QPushButton {
+                background-color: rgba(80, 200, 120, 220);
+                color: white;
+                border-radius: 10px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: rgba(120, 230, 160, 255);
+            }
+            """
         )
-
-        self.timer_loop.start()
-
-
-#---------------------------- Character Select Button ----------------------------
-        self.character_button = QPushButton("Character", self)
-        self.character_button.setGeometry(78, 200, 70, 30) 
-        self.character_button.clicked.connect(self.open_character)
-
-        self.character_button.setStyleSheet("""QPushButton {background-color: rgba(80, 200, 120, 220);color: white;border-radius: 10px;font-weight: bold;}QPushButton:hover {background-color: rgba(120, 230, 160, 255);}""")
-
-        self.character_button.hide()
         add_glow(self.character_button, "#7affb2")
-    
-#---------------------------- To-Do Button ----------------------------
-        self.todo_button = QPushButton("To-Do", self)
-        self.todo_button.setGeometry(19, 200, 55, 30)
-        self.todo_button.setFocusPolicy(Qt.StrongFocus)
-        self.todo_button.clicked.connect(self.open_todo)
+
+        self.todo_button = self._create_button(
+            "To-Do",
+            (19, 200, 55, 30),
+            self.open_todo,
+            """
+            QPushButton {
+                background-color: rgba(255, 80, 80, 220);
+                color: white;
+                border-radius: 10px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 120, 120, 255);
+            }
+            """
+        )
         add_glow(self.todo_button)
 
-#---------------------------- Settings Button ----------------------------
-        self.settings_button = QPushButton("Settings", self)
-        self.settings_button.setGeometry(152, 200, 55, 30)  
-        self.settings_button.setFocusPolicy(Qt.StrongFocus)
-        self.settings_button.clicked.connect(self.open_settings)
-
-        self.settings_button.setStyleSheet("""QPushButton {background-color: rgba(80, 80, 255, 220);color: white;border-radius: 10px;font-weight: bold;}QPushButton:hover {background-color: rgba(120, 120, 255, 255);}""")
-
-        self.settings_button.hide()
+        self.settings_button = self._create_button(
+            "Settings",
+            (152, 200, 55, 30),
+            self.open_settings,
+            """
+            QPushButton {
+                background-color: rgba(80, 80, 255, 220);
+                color: white;
+                border-radius: 10px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: rgba(120, 120, 255, 255);
+            }
+            """
+        )
         add_glow(self.settings_button, "#7aa2ff")
-    
-# ------------------------ Button Hover + Style------------------
+
+    def _setup_timers(self):
         self.hover_timer = QTimer()
         self.hover_timer.timeout.connect(self.check_hover)
         self.hover_timer.start(100)
         self.setMouseTracking(True)
         self.label.setMouseTracking(True)
-        self.todo_button.setStyleSheet("""QPushButton {background-color: rgba(255, 80, 80, 220);color: white;border-radius: 10px;font-weight: bold;}QPushButton:hover {background-color: rgba(255, 120, 120, 255);}""")
-        self.todo_button.hide() 
 
-# ------------------------- Button Animation ------------------------
         self.anim = QPropertyAnimation(self.todo_button, b"windowOpacity")
         self.anim.setDuration(150)
 
-# ------------------------- Button Hide Timer ------------------------
         self.hide_timer = QTimer(self)
         self.hide_timer.setSingleShot(True)
         self.hide_timer.timeout.connect(self.hide_button)
+
+        self.timer_loop = TimerLoop(
+            self.pet,
+            callback=self.game_loop,
+            interval=200
+        )
+        self.timer_loop.start()
+
+    def set_character_image(self, filename):
+        path = os.path.join(self.ASSET_DIR, filename)
+
+        if not os.path.exists(path):
+            print("Missing image:", path)
+            return
+
+        if self.movie is not None:
+            try:
+                self.movie.stop()
+            except Exception:
+                pass
+            self.movie = None
+            self.label.setMovie(None)
+
+        self.current_asset_path = path
+        ext = os.path.splitext(path)[1].lower()
+
+        if ext == ".gif":
+            self.movie = QMovie(path)
+            self.movie.setScaledSize(QSize(200, 200))
+            self.movie.setCacheMode(QMovie.CacheAll)
+            self.movie.setSpeed(100)
+            self.label.setMovie(self.movie)
+            self.movie.start()
+            return
+
+        pixmap = QPixmap(path)
+        if pixmap.isNull():
+            print("Failed to load image:", path)
+            return
+
+        pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.label.setPixmap(pixmap)
+
+    def load_character_asset(self, character_name=None):
+        if character_name is None:
+            character_name = self.current_character
+
+        character = self.characters.get(character_name)
+        if character is None:
+            return
+
+        state = self.pet.action or self.pet.state
+        filename = character.get_file(state)
+        path = os.path.join(self.ASSET_DIR, filename)
+
+        if self.current_asset_path != path:
+            self.set_character_image(filename)
 
 # ------------------------- Hide Button Function ------------------------
     def hide_button(self):
@@ -261,28 +275,9 @@ class PetWindow(QWidget):
 
 #------------------------ Change Character (called from character select) ------------------------
     def change_character(self, name):
-        self.current_character = name   
-        
-        if name == "firefly":
-            file = "firefly_dance.gif"
-        elif name == "cat":
-            file = "cat_idle.gif"
-        elif name == "dog":
-            file = "dog_idle.gif"
-        else:
-            return
-
-        new_path = os.path.join(self.BASE_DIR, file)
-
-        if os.path.exists(new_path):
-            self.current_gif = new_path
-            self.movie.stop()
-            self.movie.deleteLater()
-
-            self.movie = QMovie(new_path)
-            self.movie.setScaledSize(QSize(200, 200))
-            self.label.setMovie(self.movie)
-            self.movie.start()
+        self.current_character = name
+        self.current_asset_path = ""
+        self.load_character_asset(name)
 
 # -------------------------- Setting --------------------------------------
     def open_settings(self):
@@ -299,65 +294,29 @@ class PetWindow(QWidget):
 
 # ------------------------Game Loop: Update Pet State + Change GIF------------------------
     def game_loop(self):
+
+        # ---------------- Petting ----------------
         if self.is_holding and self.pet.hunger > 0:
             self.pet.action = "petting"
-            self.pet.action_timer = 1  
-        else:
-            if self.pet.action == "petting":
-                self.pet.action = None
-                self.pet.action_timer = 0
+            self.pet.action_timer = 1
+        elif self.pet.action == "petting":
+            self.pet.action = None
+            self.pet.action_timer = 0
 
-        # Idle actions
+        # ---------------- Idle Behavior ----------------
         self.lifecycle.idle_behavior()
 
-        # Death check
+        # ---------------- Death Check ----------------
         if self.lifecycle.check_death():
             print("Pet died")
-
-
-        
-        if self.pet.hunger > 0:
-            self.advancement_manager.add_progress("alive_1_hour",0.2)
-
-
-        state = self.pet.state
-
-        state_gifs = {
-            "happy": f"{self.current_character}_idle.gif",
-            "hungry": f"{self.current_character}_hungry.gif",
-            "starving": f"{self.current_character}_starving.gif",
-            "petting": f"{self.current_character}_petting.gif",
-            "jump": f"{self.current_character}_jump.gif",
-            "roll": f"{self.current_character}_roll.gif",
-            "sleep": f"{self.current_character}_sleep.gif",
-
-            # New moods
-            "sleepy": f"{self.current_character}_sleep.gif",
-            "dirty": f"{self.current_character}_idle.gif",
-            "sad": f"{self.current_character}_hungry.gif",
-        }
-
-        new_file = state_gifs.get(
-            state,
-            f"{self.current_character}_idle.gif"
-        )
-        
-        new_path = os.path.join(self.BASE_DIR, new_file)
-
-        if not os.path.exists(new_path):
-            print("Missing GIF:", new_path)
             return
 
-        if self.current_gif != new_path:
-            self.current_gif = new_path
-            self.movie.stop()
-            self.movie.deleteLater()
-            self.movie = QMovie(new_path)
-            self.movie.setScaledSize(QSize(200, 200))
-            self.movie.setCacheMode(QMovie.CacheAll)
-            self.movie.setSpeed(100)
-            self.label.setMovie(self.movie)
-            self.movie.start()
+        # ---------------- Achievement Progress ----------------
+        if self.pet.hunger > 0:
+            self.advancement_manager.add_progress("alive_1_hour", 0.2)
+
+        # ---------------- Current Visual State ----------------
+        self.load_character_asset()
 
 # ------------------------Drag Window + Close App------------------------
     def mousePressEvent(self, event):
