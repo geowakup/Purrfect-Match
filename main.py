@@ -9,8 +9,10 @@ from CharacterSelect import CharacterSelectApp
 from Setting import SettingsApp
 from Todo import TodoApp
 from advancement import AdvancementsManager
+from bgm import BGMPlayer
 from cat import CatCharacter
 from decoration import add_glow
+from dog import DogCharacter
 from firefly import FireflyCharacter
 from pet import Pet
 from pet_lifecycle import PetLifecycle
@@ -31,9 +33,13 @@ class PetWindow(QWidget):
         self.current_character = "firefly"
         self.characters = {
             "firefly": FireflyCharacter(),
-            "cat": CatCharacter()
+            "cat": CatCharacter(),
+            "dog": DogCharacter()
         }
         self.current_asset_path = ""
+        self.current_frame_paths = []
+        self.current_frame_index = 0
+        self.frame_timer = None
         self.movie = None
         self.drag_pos = None
         self.is_holding = False
@@ -45,6 +51,7 @@ class PetWindow(QWidget):
 
         self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         self.ASSET_DIR = os.path.join(self.BASE_DIR, "assets", "images")
+        self.bgm_player = BGMPlayer(self.BASE_DIR)
 
         self._load_saved_character()
         self.lifecycle = PetLifecycle(self.pet)
@@ -57,6 +64,8 @@ class PetWindow(QWidget):
         self._setup_timers()
 
         self.load_character_asset(self.current_character)
+        if self.bgm_player.has_tracks():
+            self.bgm_player.play()
 
     def _load_saved_character(self):
         self.loaded_character = self.save_system.load_pet(self.pet)
@@ -164,12 +173,73 @@ class PetWindow(QWidget):
         )
         self.timer_loop.start()
 
+    def _stop_frame_animation(self):
+        if self.frame_timer is not None:
+            try:
+                self.frame_timer.stop()
+            except Exception:
+                pass
+            self.frame_timer.deleteLater()
+            self.frame_timer = None
+
+        self.current_frame_paths = []
+        self.current_frame_index = 0
+
+    def _show_frame(self, index):
+        if not self.current_frame_paths:
+            return
+
+        path = self.current_frame_paths[index]
+        pixmap = QPixmap(path)
+        if pixmap.isNull():
+            print("Failed to load frame:", path)
+            return
+
+        pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.label.setPixmap(pixmap)
+
+    def _next_frame(self):
+        if not self.current_frame_paths:
+            return
+
+        self.current_frame_index = (self.current_frame_index + 1) % len(self.current_frame_paths)
+        self._show_frame(self.current_frame_index)
+
     def set_character_image(self, filename):
+        if isinstance(filename, (list, tuple)):
+            paths = [os.path.join(self.ASSET_DIR, frame) for frame in filename]
+
+            for path in paths:
+                if not os.path.exists(path):
+                    print("Missing frame:", path)
+                    return
+
+            if self.movie is not None:
+                try:
+                    self.movie.stop()
+                except Exception:
+                    pass
+                self.movie = None
+                self.label.setMovie(None)
+
+            self._stop_frame_animation()
+            self.current_frame_paths = paths
+            self.current_asset_path = tuple(paths)
+            self.current_frame_index = 0
+            self._show_frame(0)
+
+            self.frame_timer = QTimer(self)
+            self.frame_timer.timeout.connect(self._next_frame)
+            self.frame_timer.start(120)
+            return
+
         path = os.path.join(self.ASSET_DIR, filename)
 
         if not os.path.exists(path):
             print("Missing image:", path)
             return
+
+        self._stop_frame_animation()
 
         if self.movie is not None:
             try:
@@ -209,9 +279,13 @@ class PetWindow(QWidget):
 
         state = self.pet.action or self.pet.state
         filename = character.get_file(state)
-        path = os.path.join(self.ASSET_DIR, filename)
 
-        if self.current_asset_path != path:
+        if isinstance(filename, (list, tuple)):
+            asset_key = tuple(filename)
+        else:
+            asset_key = os.path.join(self.ASSET_DIR, filename)
+
+        if self.current_asset_path != asset_key:
             self.set_character_image(filename)
 
 # ------------------------- Hide Button Function ------------------------
@@ -287,10 +361,12 @@ class PetWindow(QWidget):
 
             self.settings_window.pet = self.pet
             self.settings_window.parent_window = self
+            if hasattr(self.settings_window, "update_bgm_status"):
+                self.settings_window.update_bgm_status()
 
-            self.settings_window.show()
-            self.settings_window.raise_()
-            self.settings_window.activateWindow()
+        self.settings_window.show()
+        self.settings_window.raise_()
+        self.settings_window.activateWindow()
 
 # ------------------------Game Loop: Update Pet State + Change GIF------------------------
     def game_loop(self):

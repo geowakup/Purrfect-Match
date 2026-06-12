@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QWidget,
     QVBoxLayout,
+    QHBoxLayout,
     QPushButton,
     QLabel,
     QSlider,
@@ -103,6 +104,20 @@ class SettingsApp(QWidget):
         self.bgm_slider.valueChanged.connect(self.change_bgm_volume)
         layout.addWidget(self.bgm_slider)
 
+        self.bgm_status_label = QLabel("BGM: Stopped")
+        layout.addWidget(self.bgm_status_label)
+
+        self.bgm_button_layout = QHBoxLayout()
+        self.bgm_play_button = QPushButton("Play BGM")
+        self.bgm_play_button.clicked.connect(self.play_bgm)
+        self.bgm_button_layout.addWidget(self.bgm_play_button)
+
+        self.bgm_stop_button = QPushButton("Stop BGM")
+        self.bgm_stop_button.clicked.connect(self.stop_bgm)
+        self.bgm_button_layout.addWidget(self.bgm_stop_button)
+
+        layout.addLayout(self.bgm_button_layout)
+
         self.setLayout(layout)
 
         self.pet = None
@@ -172,6 +187,70 @@ class SettingsApp(QWidget):
         self.bgm_label.setText(
             f"Background Music Volume: {value}"
         )
+
+        if hasattr(self, "parent_window") and self.parent_window is not None:
+            if hasattr(self.parent_window, "bgm_player"):
+                self.parent_window.bgm_player.set_volume(value)
+
+    def play_bgm(self):
+        if not hasattr(self, "parent_window") or self.parent_window is None:
+            QMessageBox.warning(self, "BGM", "BGM controller not available.")
+            return
+
+        if not hasattr(self.parent_window, "bgm_player"):
+            QMessageBox.warning(self, "BGM", "BGM player is not initialized.")
+            return
+
+        if not self.parent_window.bgm_player.has_tracks():
+            QMessageBox.information(
+                self,
+                "BGM",
+                "No audio files found in assets/audio. Add .mp3, .wav, .ogg or .flac files there."
+            )
+            return
+
+        self.parent_window.bgm_player.play()
+        self.update_bgm_status()
+
+    def stop_bgm(self):
+        if not hasattr(self, "parent_window") or self.parent_window is None:
+            QMessageBox.warning(self, "BGM", "BGM controller not available.")
+            return
+
+        if not hasattr(self.parent_window, "bgm_player"):
+            QMessageBox.warning(self, "BGM", "BGM player is not initialized.")
+            return
+
+        if not self.parent_window.bgm_player.has_tracks():
+            QMessageBox.information(
+                self,
+                "BGM",
+                "No audio files found in assets/audio. Add .mp3, .wav, .ogg or .flac files there."
+            )
+            return
+
+        self.parent_window.bgm_player.stop()
+        self.update_bgm_status()
+
+    def update_bgm_status(self):
+        if not hasattr(self, "parent_window") or self.parent_window is None:
+            self.bgm_status_label.setText("BGM: Unknown")
+            return
+
+        if not hasattr(self.parent_window, "bgm_player"):
+            self.bgm_status_label.setText("BGM: Not initialized")
+            return
+
+        player = self.parent_window.bgm_player
+        if not player.has_tracks():
+            self.bgm_status_label.setText("BGM: No tracks")
+        elif player.player.playbackState() == player.player.PlayingState:
+            self.bgm_status_label.setText("BGM: Playing")
+        else:
+            self.bgm_status_label.setText("BGM: Stopped")
+
+        self.bgm_play_button.setEnabled(not player.player.playbackState() == player.player.PlayingState)
+        self.bgm_stop_button.setEnabled(player.player.playbackState() == player.player.PlayingState)
 
     def open_shop(self):
         if self.pet is None:
