@@ -72,7 +72,11 @@ class QuestSystem:
 
                     quest["completed"] = True
 
-                    print(f"Quest completed: {quest['name']}")
+                    quest["reward"] = 10
+
+                    quest["happiness_reward"] = 5 
+
+                    print("Quest completed: {quest['name']}")
 
         self.save_quests(quests)
 
