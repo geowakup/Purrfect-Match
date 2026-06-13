@@ -176,6 +176,32 @@ class PetWindow(QWidget):
 
         self.settings_button.hide()
         add_glow(self.settings_button, "#7aa2ff")
+
+# ---------------------------- Shop Button ----------------------------
+        self.shop_button = QPushButton("Shop", self)
+
+        self.shop_button.setGeometry(78, 160, 70, 30)
+
+        self.shop_button.clicked.connect(
+            self.open_shop
+        )
+
+        self.shop_button.setStyleSheet("""
+        QPushButton {
+            background-color: rgba(255,180,0,220);
+            color:white;
+            border-radius:10px;
+            font-weight:bold;
+        }
+
+        QPushButton:hover {
+            background-color: rgba(255,210,80,255);
+        }
+        """)
+
+        add_glow(self.shop_button, "#ffb24d")
+
+        self.shop_button.hide()
     
 # ------------------------ Button Hover + Style------------------
         self.hover_timer = QTimer()
@@ -209,7 +235,7 @@ class PetWindow(QWidget):
         self.anim.finished.connect(self.todo_button.hide)
         self.anim.finished.connect(self.settings_button.hide)
         self.anim.finished.connect(self.character_button.hide)
-        self.anim.finished.connect(self.shop_button.hide)
+        self.anim.finished.connect(self.shop_button.hide) 
         self.anim.start()
 
 # ------------------------ Check and trigger ------------------------
@@ -298,26 +324,6 @@ class PetWindow(QWidget):
             self.movie.setScaledSize(QSize(200, 200))
             self.label.setMovie(self.movie)
             self.movie.start()
-
-            # ---------------------------- Shop Button ----------------------------
-        self.shop_button = QPushButton("Shop", self)
-        self.shop_button.setGeometry(78, 165, 70, 30)
-
-        self.shop_button.clicked.connect(self.open_shop)
-
-        self.shop_button.setStyleSheet("""
-        QPushButton {
-            background-color: rgba(255, 180, 0, 220);
-            color: white;
-            border-radius: 10px;
-            font-weight: bold;
-        }
-        QPushButton:hover {
-            background-color: rgba(255, 210, 80, 255);
-        }
-        """)
-
-        self.shop_button.hide()
 
 # -------------------------- Setting --------------------------------------
     def open_settings(self):

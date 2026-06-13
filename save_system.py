@@ -5,6 +5,8 @@
 import json
 import os
 
+import pet
+
 
 class SaveSystem:
 
@@ -58,21 +60,64 @@ class SaveSystem:
 
             data = json.load(file)
 
-        pet.name = data["name"]
-        pet.hunger = data["hunger"]
-        pet.happiness = data["happiness"]
-        pet.energy = data["energy"]
-        pet.cleanliness = data["cleanliness"]
+    def load_pet(self, pet):
 
-        pet.state = data["state"]
-        pet.action = data["action"]
+        if not os.path.exists(self.filename):
 
-        pet.alive = data["alive"]
-        pet.age = data["age"]
-        pet.character = data["character"]
+            print("No save file found.")
 
-        pet.coins = data["coins", 100]
-        pet.inventory = data["inventory", []]
+            return None
+
+        with open(self.filename, "r") as file:
+
+            data = json.load(file)
+
+        # Safe loading
+        pet.name = data.get("name", "Pet")
+
+        pet.hunger = data.get("hunger", 100)
+        pet.happiness = data.get("happiness", 100)
+
+        pet.energy = data.get("energy", 100)
+
+        pet.cleanliness = data.get(
+            "cleanliness",
+            100
+        )
+
+        pet.state = data.get(
+            "state",
+            "happy"
+        )
+
+        pet.action = data.get(
+            "action",
+            None
+        )
+
+        pet.coins = data.get(
+            "coins",
+            100
+        )
+
+        pet.inventory = data.get(
+            "inventory",
+            []
+        )
+
+        pet.alive = data.get(
+            "alive",
+            True
+        )
+
+        pet.age = data.get(
+            "age",
+            0
+        )
+
         print("Pet loaded!")
 
-        return data["character"]
+        return data.get(
+            "character",
+            "firefly"
+        )
