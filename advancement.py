@@ -7,7 +7,7 @@ class AdvancementsManager:
         self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         self.save_file = os.path.join(
             self.BASE_DIR,
-            "save_data.json"
+            "advancements.json"
         )
 
         self.advancements = {
@@ -52,12 +52,25 @@ class AdvancementsManager:
     # Unlock Achievement
     # ------------------------
     def unlock(self, key):
+
+        if key not in self.advancements:
+
+            print(
+                "Missing advancement:",
+                key
+            )
+
+            return
+
         if not self.advancements[key]["unlocked"]:
+
             self.advancements[key]["unlocked"] = True
+
             print(
                 f"Advancement unlocked: "
                 f"{self.advancements[key]['name']}"
             )
+
             self.save_data()
 
     # ------------------------
@@ -91,10 +104,35 @@ class AdvancementsManager:
     # Load Data
     # ------------------------
     def load_data(self):
-        if os.path.exists(self.save_file):
-            with open(self.save_file, "r") as file:
-                self.advancements = json.load(file)
 
+        if not os.path.exists(
+            self.save_file
+        ):
+            return
+
+        try:
+
+            with open(
+                self.save_file,
+                "r"
+            ) as file:
+
+                loaded = json.load(file)
+
+            for key in loaded:
+
+                if key in self.advancements:
+
+                    self.advancements[key].update(
+                        loaded[key]
+                    )
+
+        except Exception as e:
+
+            print(
+                "Advancement load error:",
+                e
+            )
     # ------------------------
     # Get List
     # ------------------------

@@ -486,6 +486,7 @@ class PetWindow(QWidget):
             self.drag_pos = current_pos
     
     def closeEvent(self, event):
+
         if self.todo_window is not None:
             self.todo_window.close()
 
