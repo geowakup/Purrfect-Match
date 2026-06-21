@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtMultimedia import QMediaPlayer
 from shop_system import ShopSystem
 from styles import load_theme
 
@@ -81,19 +82,7 @@ class SettingsApp(QWidget):
         layout.addWidget(self.play_button)
 
         # =========================
-        # Master Volume
-        # =========================
-        self.master_label = QLabel("Master Volume: 100")
-        layout.addWidget(self.master_label)
-
-        self.master_slider = QSlider(Qt.Horizontal)
-        self.master_slider.setRange(0, 100)
-        self.master_slider.setValue(100)
-        self.master_slider.valueChanged.connect(self.change_master_volume)
-        layout.addWidget(self.master_slider)
-
-        # =========================
-        # Background Music Volume
+        # Background Music Controls
         # =========================
         self.bgm_label = QLabel("Background Music Volume: 100")
         layout.addWidget(self.bgm_label)
@@ -106,6 +95,13 @@ class SettingsApp(QWidget):
 
         self.bgm_status_label = QLabel("BGM: Stopped")
         layout.addWidget(self.bgm_status_label)
+
+        # BGM Track Selection
+        self.bgm_tracks_label = QLabel("Select BGM Track:")
+        layout.addWidget(self.bgm_tracks_label)
+        self.bgm_tracks_layout = QHBoxLayout()
+        self.bgm_tracks_buttons = {}
+        layout.addLayout(self.bgm_tracks_layout)
 
         self.bgm_button_layout = QHBoxLayout()
         self.bgm_play_button = QPushButton("Play BGM")
@@ -178,11 +174,6 @@ class SettingsApp(QWidget):
     # =========================
     # Volume Functions
     # =========================
-    def change_master_volume(self, value):
-        self.master_label.setText(
-            f"Master Volume: {value}"
-        )
-
     def change_bgm_volume(self, value):
         self.bgm_label.setText(
             f"Background Music Volume: {value}"
@@ -244,13 +235,54 @@ class SettingsApp(QWidget):
         player = self.parent_window.bgm_player
         if not player.has_tracks():
             self.bgm_status_label.setText("BGM: No tracks")
-        elif player.player.playbackState() == player.player.PlayingState:
+        elif player.player.playbackState() == QMediaPlayer.PlayingState:
             self.bgm_status_label.setText("BGM: Playing")
         else:
             self.bgm_status_label.setText("BGM: Stopped")
 
-        self.bgm_play_button.setEnabled(not player.player.playbackState() == player.player.PlayingState)
-        self.bgm_stop_button.setEnabled(player.player.playbackState() == player.player.PlayingState)
+        self.bgm_play_button.setEnabled(not player.player.playbackState() == QMediaPlayer.PlayingState)
+        self.bgm_stop_button.setEnabled(player.player.playbackState() == QMediaPlayer.PlayingState)
+
+    def populate_bgm_tracks(self):
+        """Populate track selection buttons from available BGM tracks"""
+        if not hasattr(self, "parent_window") or self.parent_window is None:
+            return
+
+        if not hasattr(self.parent_window, "bgm_player"):
+            return
+
+        player = self.parent_window.bgm_player
+        tracks = player.get_all_tracks()
+
+        # Clear existing buttons
+        for btn in self.bgm_tracks_buttons.values():
+            self.bgm_tracks_layout.removeWidget(btn)
+            btn.deleteLater()
+        self.bgm_tracks_buttons.clear()
+
+        if not tracks:
+            return
+
+        for track in tracks:
+            track_name = track.rsplit(".", 1)[0]  # Remove extension
+            btn = QPushButton(track_name)
+            btn.clicked.connect(lambda checked, t=track: self.select_bgm_track(t))
+            self.bgm_tracks_layout.addWidget(btn)
+            self.bgm_tracks_buttons[track] = btn
+
+    def select_bgm_track(self, track_filename):
+        """Load and play selected BGM track"""
+        if not hasattr(self, "parent_window") or self.parent_window is None:
+            QMessageBox.warning(self, "BGM", "BGM controller not available.")
+            return
+
+        player = self.parent_window.bgm_player
+        if player.load_track(track_filename):
+            player.play()
+            self.update_bgm_status()
+            QMessageBox.information(self, "BGM", f"Now playing: {track_filename}")
+        else:
+            QMessageBox.warning(self, "BGM", f"Failed to load: {track_filename}")
 
     def open_shop(self):
         if self.pet is None:

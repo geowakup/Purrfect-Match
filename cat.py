@@ -47,4 +47,9 @@ class CatCharacter:
         }
 
     def get_file(self, state):
-        return self.states.get(state, "cat-idle.jpg")
+        return self.states.get(state, [
+            "cat-happy-1.png",
+            "cat-happy-2.png",
+            "cat-happy-3.png",
+            "cat-happy-4.png"
+        ])

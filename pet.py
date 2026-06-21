@@ -32,9 +32,9 @@ class Pet:
             return
 
         # Mood priority system
-        if self.hunger <= 20:
+        if self.hunger < 40:
             self.state = "starving"
-        elif self.hunger <= 40:
+        elif self.hunger <= 60:
             self.state = "hungry"
         elif self.energy <= 20:
             self.state = "sleepy"
