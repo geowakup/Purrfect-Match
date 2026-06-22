@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtMultimedia import QMediaPlayer
 from shop_system import ShopSystem
 from styles import load_theme
 
@@ -81,19 +82,7 @@ class SettingsApp(QWidget):
         layout.addWidget(self.play_button)
 
         # =========================
-        # Master Volume
-        # =========================
-        self.master_label = QLabel("Master Volume: 100")
-        layout.addWidget(self.master_label)
-
-        self.master_slider = QSlider(Qt.Horizontal)
-        self.master_slider.setRange(0, 100)
-        self.master_slider.setValue(100)
-        self.master_slider.valueChanged.connect(self.change_master_volume)
-        layout.addWidget(self.master_slider)
-
-        # =========================
-        # Background Music Volume
+        # Background Music Controls
         # =========================
         self.bgm_label = QLabel("Background Music Volume: 100")
         layout.addWidget(self.bgm_label)
@@ -107,6 +96,13 @@ class SettingsApp(QWidget):
         self.bgm_status_label = QLabel("BGM: Stopped")
         layout.addWidget(self.bgm_status_label)
 
+        # BGM Track Selection
+        self.bgm_tracks_label = QLabel("Select BGM Track:")
+        layout.addWidget(self.bgm_tracks_label)
+        self.bgm_tracks_layout = QHBoxLayout()
+        self.bgm_tracks_buttons = {}
+        layout.addLayout(self.bgm_tracks_layout)
+
         self.bgm_button_layout = QHBoxLayout()
         self.bgm_play_button = QPushButton("Play BGM")
         self.bgm_play_button.clicked.connect(self.play_bgm)
@@ -118,9 +114,45 @@ class SettingsApp(QWidget):
 
         layout.addLayout(self.bgm_button_layout)
 
+        # =========================
+        # Developer Mode Section
+        # =========================
+        self.dev_mode_label = QLabel("Developer Mode")
+        layout.addWidget(self.dev_mode_label)
+        
+        self.dev_mode_toggle = QPushButton("Enable Developer Mode")
+        self.dev_mode_toggle.setCheckable(True)
+        self.dev_mode_toggle.clicked.connect(self.toggle_developer_mode)
+        layout.addWidget(self.dev_mode_toggle)
+        
+        # States selector
+        self.states_label = QLabel("Select State:")
+        self.states_label.hide()
+        layout.addWidget(self.states_label)
+        
+        self.states_layout = QHBoxLayout()
+        self.state_buttons = {}
+        layout.addLayout(self.states_layout)
+        
+        # Actions selector
+        self.actions_label = QLabel("Select Action:")
+        self.actions_label.hide()
+        layout.addWidget(self.actions_label)
+        
+        self.actions_layout = QHBoxLayout()
+        self.action_buttons = {}
+        layout.addLayout(self.actions_layout)
+        
+        # Exit dev mode button
+        self.exit_dev_button = QPushButton("Exit Developer Mode")
+        self.exit_dev_button.clicked.connect(self.exit_developer_mode)
+        self.exit_dev_button.hide()
+        layout.addWidget(self.exit_dev_button)
+
         self.setLayout(layout)
 
         self.pet = None
+        self.developer_mode = False
 
         # =========================
         # Secret Shortcut
@@ -178,11 +210,6 @@ class SettingsApp(QWidget):
     # =========================
     # Volume Functions
     # =========================
-    def change_master_volume(self, value):
-        self.master_label.setText(
-            f"Master Volume: {value}"
-        )
-
     def change_bgm_volume(self, value):
         self.bgm_label.setText(
             f"Background Music Volume: {value}"
@@ -244,13 +271,54 @@ class SettingsApp(QWidget):
         player = self.parent_window.bgm_player
         if not player.has_tracks():
             self.bgm_status_label.setText("BGM: No tracks")
-        elif player.player.playbackState() == player.player.PlayingState:
+        elif player.player.playbackState() == QMediaPlayer.PlayingState:
             self.bgm_status_label.setText("BGM: Playing")
         else:
             self.bgm_status_label.setText("BGM: Stopped")
 
-        self.bgm_play_button.setEnabled(not player.player.playbackState() == player.player.PlayingState)
-        self.bgm_stop_button.setEnabled(player.player.playbackState() == player.player.PlayingState)
+        self.bgm_play_button.setEnabled(not player.player.playbackState() == QMediaPlayer.PlayingState)
+        self.bgm_stop_button.setEnabled(player.player.playbackState() == QMediaPlayer.PlayingState)
+
+    def populate_bgm_tracks(self):
+        """Populate track selection buttons from available BGM tracks"""
+        if not hasattr(self, "parent_window") or self.parent_window is None:
+            return
+
+        if not hasattr(self.parent_window, "bgm_player"):
+            return
+
+        player = self.parent_window.bgm_player
+        tracks = player.get_all_tracks()
+
+        # Clear existing buttons
+        for btn in self.bgm_tracks_buttons.values():
+            self.bgm_tracks_layout.removeWidget(btn)
+            btn.deleteLater()
+        self.bgm_tracks_buttons.clear()
+
+        if not tracks:
+            return
+
+        for track in tracks:
+            track_name = track.rsplit(".", 1)[0]  # Remove extension
+            btn = QPushButton(track_name)
+            btn.clicked.connect(lambda checked, t=track: self.select_bgm_track(t))
+            self.bgm_tracks_layout.addWidget(btn)
+            self.bgm_tracks_buttons[track] = btn
+
+    def select_bgm_track(self, track_filename):
+        """Load and play selected BGM track"""
+        if not hasattr(self, "parent_window") or self.parent_window is None:
+            QMessageBox.warning(self, "BGM", "BGM controller not available.")
+            return
+
+        player = self.parent_window.bgm_player
+        if player.load_track(track_filename):
+            player.play()
+            self.update_bgm_status()
+            QMessageBox.information(self, "BGM", f"Now playing: {track_filename}")
+        else:
+            QMessageBox.warning(self, "BGM", f"Failed to load: {track_filename}")
 
     def open_shop(self):
         if self.pet is None:
@@ -283,3 +351,118 @@ class SettingsApp(QWidget):
             QMessageBox.information(self, "Shop", message)
         else:
             QMessageBox.warning(self, "Shop", message)
+
+    # =========================
+    # Developer Mode Functions
+    # =========================
+    def toggle_developer_mode(self):
+        """Toggle developer mode on/off"""
+        self.developer_mode = not self.developer_mode
+        
+        if self.developer_mode:
+            self.dev_mode_toggle.setText("Disable Developer Mode")
+            self.dev_mode_toggle.setStyleSheet(
+                "QPushButton { background-color: #90EE90; color: black; }"
+            )
+            self.show_dev_controls()
+            # Notify parent window to enter dev mode
+            if hasattr(self, "parent_window") and self.parent_window is not None:
+                self.parent_window.enter_developer_mode()
+        else:
+            self.dev_mode_toggle.setText("Enable Developer Mode")
+            self.dev_mode_toggle.setStyleSheet("")
+            self.hide_dev_controls()
+            # Notify parent window to exit dev mode
+            if hasattr(self, "parent_window") and self.parent_window is not None:
+                self.parent_window.exit_developer_mode()
+
+    def show_dev_controls(self):
+        """Show developer mode controls"""
+        self.states_label.show()
+        self.actions_label.show()
+        self.exit_dev_button.show()
+        
+        # Create state buttons
+        states = ["happy", "hungry", "starving"]
+        for state in states:
+            if state not in self.state_buttons:
+                btn = QPushButton(state.capitalize())
+                btn.setCheckable(True)
+                btn.clicked.connect(lambda checked, s=state: self.set_dev_state(s))
+                self.states_layout.addWidget(btn)
+                self.state_buttons[state] = btn
+        
+        # Create action buttons
+        actions = ["idle", "petting", "jump", "roll", "sleep"]
+        for action in actions:
+            if action not in self.action_buttons:
+                btn = QPushButton(action.capitalize())
+                btn.setCheckable(True)
+                btn.clicked.connect(lambda checked, a=action: self.set_dev_action(a))
+                self.actions_layout.addWidget(btn)
+                self.action_buttons[action] = btn
+
+    def hide_dev_controls(self):
+        """Hide developer mode controls"""
+        self.states_label.hide()
+        self.actions_label.hide()
+        self.exit_dev_button.hide()
+        
+        # Reset button states
+        for btn in self.state_buttons.values():
+            btn.setChecked(False)
+        for btn in self.action_buttons.values():
+            btn.setChecked(False)
+
+    def set_dev_state(self, state_name):
+        """Set pet to a specific state for testing"""
+        if not self.pet:
+            return
+        
+        # Uncheck other state buttons
+        for name, btn in self.state_buttons.items():
+            if name != state_name:
+                btn.setChecked(False)
+        
+        # Clear any action when setting state directly
+        self.pet.action = None
+        self.pet.action_timer = 9999  # Continuous display of state animation
+        self.pet.state = state_name
+        
+        # Reset action buttons
+        for btn in self.action_buttons.values():
+            btn.setChecked(False)
+
+        # Immediately refresh the displayed animation
+        if hasattr(self, "parent_window") and self.parent_window is not None:
+            self.parent_window.load_character_asset()
+        
+        print(f"Developer Mode: Set state to {state_name}")
+
+    def set_dev_action(self, action_name):
+        """Set pet to a specific action for testing"""
+        if not self.pet:
+            return
+        
+        # Uncheck other action buttons
+        for name, btn in self.action_buttons.items():
+            if name != action_name:
+                btn.setChecked(False)
+        
+        self.pet.action = action_name
+        self.pet.action_timer = 9999  # Keep the action active indefinitely in dev mode
+        
+        # Reset state buttons
+        for btn in self.state_buttons.values():
+            btn.setChecked(False)
+
+        # Immediately refresh the displayed animation
+        if hasattr(self, "parent_window") and self.parent_window is not None:
+            self.parent_window.load_character_asset()
+        
+        print(f"Developer Mode: Set action to {action_name}")
+
+    def exit_developer_mode(self):
+        """Exit developer mode and restore normal gameplay"""
+        self.dev_mode_toggle.setChecked(False)
+        self.toggle_developer_mode()

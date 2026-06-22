@@ -32,9 +32,9 @@ class Pet:
             return
 
         # Mood priority system
-        if self.hunger <= 20:
+        if self.hunger < 40:
             self.state = "starving"
-        elif self.hunger <= 40:
+        elif self.hunger <= 60:
             self.state = "hungry"
         elif self.energy <= 20:
             self.state = "sleepy"
@@ -88,11 +88,12 @@ class Pet:
         if self.hunger <= 30 or self.energy <= 30:
             self.happiness = max(0, self.happiness - 1)
 
-        # Action timer
-        if self.action_timer > 0:
-            self.action_timer -= 1
-        else:
-            self.action = None
+        # Action timer (don't decrement in developer mode - indicated by high value)
+        if self.action_timer < 1000:  # Only decrement normal timers, not developer mode
+            if self.action_timer > 0:
+                self.action_timer -= 1
+            else:
+                self.action = None
 
         self.update_state()
 

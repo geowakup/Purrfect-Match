@@ -44,6 +44,12 @@ class FireflyCharacter:
                 "firefly-sleep-3.png",
                 "firefly-sleep-4.png"
             ],
+            "idle": [
+                "firefly-idle-1.png",
+                "firefly-idle-2.png",
+                "firefly-idle-3.png",
+                "firefly-idle-4.png"
+            ],
         }
 
     def get_file(self, state):
