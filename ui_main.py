@@ -86,6 +86,23 @@ def load_quests():
         )
 
         quest_label.pack(pady=5)
+        if quest["completed"]:
+
+         global hunger, happiness
+
+    hunger = min(
+        hunger + quest.get("food_reward", 0),
+        100
+    )
+
+    happiness = min(
+        happiness + quest.get("happiness_reward", 0),
+        100
+    )
+
+    stats.config(
+        text=f"🍖 Hunger: {hunger}\n😊 Happiness: {happiness}"
+    )
 
 
 load_quests()
@@ -97,19 +114,29 @@ def feed_pet():
     if rewards.get_balance() >= 10:
 
         rewards.spend_reward(10, "Fed pet")
+
         quests.update_progress("Complete 1 task")
 
         coins.config(
             text=f" Coins: {rewards.get_balance()}"
         )
-        
+
         hunger = min(hunger + 10, 100)
+
+        for quest in quest_data:
+
+            if quest ["completed"]:
+
+                hunger = min(
+                    hunger + quest["reward"],
+                    100
+                )
+
         happiness = min(happiness + 5, 100)
 
         stats.config(
-            text=f" Hunger:  {hunger}\n Happiness: {happiness}"
+            text=f"🍖 Hunger: {hunger}\n😊 Happiness: {happiness}"
         )
-
 
         status.config(
             text="🐱 Yum! Your pet is happy!"
@@ -118,8 +145,9 @@ def feed_pet():
     else:
 
         status.config(
-            text="😿 Not enough coins!" 
+            text="🐱 Not enough coins!"
         )
+   
 # FEED BUTTON
 feed_button = tk.Button(
     window,

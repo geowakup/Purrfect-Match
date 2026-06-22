@@ -2,6 +2,7 @@ from system.database import Database
 from datetime import date
 
 
+    
 class QuestSystem:
 
     def __init__(self):
@@ -9,9 +10,30 @@ class QuestSystem:
         self.db = Database()
         self.filename = "quests"
 
-        # stores last reset date
         self.last_reset = str(date.today())
 
+        self.check_daily_reset()
+
+
+    def check_daily_reset(self):
+
+        today = str(date.today())
+
+        if self.last_reset != today:
+
+            quests = self.db.load(self.filename)
+
+            for quest in quests:
+
+                quest["progress"] = 0
+                quest["completed"] = False
+
+            self.db.save(self.filename, quests)
+
+            self.last_reset = today    
+        
+
+        
     # -------------------
     # GET QUESTS
     # -------------------
@@ -72,7 +94,11 @@ class QuestSystem:
 
                     quest["completed"] = True
 
-                    print(f"Quest completed: {quest['name']}")
+                    quest["reward"] = 10
+
+                    quest["happiness_reward"] = 5 
+
+                    print("Quest completed: {quest['name']}")
 
         self.save_quests(quests)
 
