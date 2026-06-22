@@ -52,6 +52,9 @@ class PetWindow(QWidget):
         self.todo_window = None
         self.character_window = None
         self.advancement_manager = AdvancementsManager()
+        
+        # Developer Mode
+        self.developer_mode = False
 
         self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         self.ASSET_DIR = os.path.join(self.BASE_DIR, "assets", "images")
@@ -265,7 +268,7 @@ class PetWindow(QWidget):
             print(f"Starting frame animation: {len(paths)} frames for state {self.pet.action or self.pet.state}")
             self.frame_timer = QTimer(self)
             self.frame_timer.timeout.connect(self._next_frame)
-            self.frame_timer.setInterval(120)
+            self.frame_timer.setInterval(250)
             self.frame_timer.start()
             print("Frame timer started")
             return
@@ -327,6 +330,13 @@ class PetWindow(QWidget):
         if self.current_asset_path != asset_key or self._last_visual_state != state:
             self.set_character_image(filename)
             self._last_visual_state = state
+        else:
+            # Restart frame timer if animation asset is already loaded but timer stopped
+            if isinstance(filename, (list, tuple)) and (
+                self.frame_timer is None or not self.frame_timer.isActive()
+            ):
+                self.set_character_image(filename)
+                self._last_visual_state = state
 
 # ------------------------- Hide Button Function ------------------------
     def hide_button(self):
@@ -412,14 +422,31 @@ class PetWindow(QWidget):
 
 # ------------------------Game Loop: Update Pet State + Change GIF------------------------
     def game_loop(self):
+        # If in developer mode, skip normal game updates
+        if self.developer_mode:
+            # Keep action running continuously for smooth looping
+            if self.pet.action is not None:
+                self.pet.action_timer = 100  # Keep action active indefinitely
+            # Just update the visual state to reflect current pet state/action
+            self.load_character_asset()
+            return
 
+        # Normal gameplay loop (disabled in developer mode)
+        # Keep action timers high for smooth continuous 4-frame animation
+        if self.pet.action is not None:
+            self.pet.action_timer = max(self.pet.action_timer, 50)  # Maintain smooth animation
+        
         # ---------------- Petting ----------------
         if self.is_holding and self.pet.hunger > 0:
             self.pet.action = "petting"
-            self.pet.action_timer = 1
+            self.pet.action_timer = 50  # Smooth continuous petting animation
         elif self.pet.action == "petting":
-            self.pet.action = None
-            self.pet.action_timer = 0
+            # Keep petting action running smoothly
+            self.pet.action_timer = max(self.pet.action_timer, 50)
+
+        # Keep random action animations running smoothly
+        if self.pet.action in ["jump", "roll", "happy", "sleep"]:
+            self.pet.action_timer = max(self.pet.action_timer, 50)
 
         # ---------------- Idle Behavior ----------------
         self.lifecycle.idle_behavior()
@@ -441,7 +468,7 @@ class PetWindow(QWidget):
         """Trigger sleep state if no interaction for 30 seconds"""
         if self.pet.action is None and self.pet.state != "sleep":
             self.pet.action = "sleep"
-            self.pet.action_timer = 20  # Increased for looping
+            self.pet.action_timer = 50  # Increased for smooth looping
 
 # ------------------------Drag Window + Close App------------------------
     def mousePressEvent(self, event):
@@ -456,7 +483,7 @@ class PetWindow(QWidget):
             # If it wasn't a drag, trigger a random action
             if not self.dragging:
                 self.pet.action = random.choice(["happy", "jump", "petting", "roll"])
-                self.pet.action_timer = 15  # Increased from 5 to allow looping
+                self.pet.action_timer = 50  # Increased for smooth looping
                 # Reset inactivity timer on interaction
                 self.inactivity_timer.stop()
                 self.inactivity_timer.start(30000)
@@ -482,6 +509,40 @@ class PetWindow(QWidget):
 
         QApplication.quit()   
         event.accept()
+    
+    # =========================
+    # Developer Mode Methods
+    # =========================
+    def enter_developer_mode(self):
+        """Enter developer mode - stops normal game loop updates"""
+        self.developer_mode = True
+        print("Developer Mode: ENABLED - All normal game updates paused")
+        # Stop normal update timers and freeze pet stats
+        self.inactivity_timer.stop()
+        if self.timer_loop is not None:
+            self.timer_loop.stop()
+        self.pet.alive = True
+        self.pet.hunger = max(0, self.pet.hunger)
+        self.pet.energy = max(0, self.pet.energy)
+        self.pet.happiness = max(0, self.pet.happiness)
+        self.pet.cleanliness = max(0, self.pet.cleanliness)
+        self.pet.action_timer = 9999
+    
+    def exit_developer_mode(self):
+        """Exit developer mode - resume normal game loop"""
+        self.developer_mode = False
+        print("Developer Mode: DISABLED - Resuming normal gameplay")
+        # Reset developer mode overrides so pet stats can resume updating
+        self.pet.action = None
+        self.pet.action_timer = 0
+        self.pet.update_state()
+        # Force reload of the current animation so normal cycling restarts
+        self._last_visual_state = None
+        self.load_character_asset()
+        # Resume normal timers
+        self.inactivity_timer.start(30000)
+        if self.timer_loop is not None:
+            self.timer_loop.start()
 # =========================
 # MAIN APP
 # =========================

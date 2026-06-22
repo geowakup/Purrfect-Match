@@ -44,6 +44,12 @@ class CatCharacter:
                 "cat-sleep-3.png",
                 "cat-sleep-4.png"
             ],
+            "idle": [
+                "cat-happy-1.png",
+                "cat-happy-2.png",
+                "cat-happy-3.png",
+                "cat-happy-4.png"
+            ],
         }
 
     def get_file(self, state):
