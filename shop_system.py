@@ -2,9 +2,6 @@
 # shop_system.py
 # =========================
 
-import pet
-
-
 class ShopSystem:
 
     def __init__(self):
@@ -41,24 +38,14 @@ class ShopSystem:
     def buy_item(self, pet, item_name):
 
         if item_name not in self.items:
-
-            print("Item does not exist.")
-
-            return False
+            return False, "Item does not exist."
 
         item = self.items[item_name]
 
-        # Not enough coins
         if pet.coins < item["price"]:
+            return False, "Not enough coins."
 
-            print("Not enough coins.")
-
-            return False
-
-        # Remove coins
         pet.coins -= item["price"]
-
-        # Add item to inventory
         pet.inventory.append(item_name)
 
         return True, f"Bought {item_name} for {item['price']} coins!"
