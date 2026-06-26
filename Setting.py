@@ -38,6 +38,8 @@ class SettingsApp(QWidget):
         layout.addWidget(self.pink_theme_btn)
         layout.addWidget(self.dark_theme_btn)
         layout.addWidget(self.cyber_theme_btn)
+        self.dark_theme_btn.hide()
+        self.cyber_theme_btn.hide()
 
         self.pink_theme_btn.clicked.connect(
         lambda: self.change_theme("pink")
@@ -86,31 +88,38 @@ class SettingsApp(QWidget):
         # =========================
         self.bgm_label = QLabel("Background Music Volume: 100")
         layout.addWidget(self.bgm_label)
+        self.bgm_label.hide()
 
         self.bgm_slider = QSlider(Qt.Horizontal)
         self.bgm_slider.setRange(0, 100)
         self.bgm_slider.setValue(100)
         self.bgm_slider.valueChanged.connect(self.change_bgm_volume)
         layout.addWidget(self.bgm_slider)
+        self.bgm_slider.hide()
 
         self.bgm_status_label = QLabel("BGM: Stopped")
         layout.addWidget(self.bgm_status_label)
+        self.bgm_status_label.hide()
 
         # BGM Track Selection
         self.bgm_tracks_label = QLabel("Select BGM Track:")
         layout.addWidget(self.bgm_tracks_label)
+        self.bgm_tracks_label.hide()
         self.bgm_tracks_layout = QHBoxLayout()
         self.bgm_tracks_buttons = {}
         layout.addLayout(self.bgm_tracks_layout)
+        self.bgm_tracks_layout.setContentsMargins(0, 0, 0, 0)
 
         self.bgm_button_layout = QHBoxLayout()
         self.bgm_play_button = QPushButton("Play BGM")
         self.bgm_play_button.clicked.connect(self.play_bgm)
         self.bgm_button_layout.addWidget(self.bgm_play_button)
+        self.bgm_play_button.hide()
 
         self.bgm_stop_button = QPushButton("Stop BGM")
         self.bgm_stop_button.clicked.connect(self.stop_bgm)
         self.bgm_button_layout.addWidget(self.bgm_stop_button)
+        self.bgm_stop_button.hide()
 
         layout.addLayout(self.bgm_button_layout)
 
@@ -119,11 +128,13 @@ class SettingsApp(QWidget):
         # =========================
         self.dev_mode_label = QLabel("Developer Mode")
         layout.addWidget(self.dev_mode_label)
+        self.dev_mode_label.hide()
         
         self.dev_mode_toggle = QPushButton("Enable Developer Mode")
         self.dev_mode_toggle.setCheckable(True)
         self.dev_mode_toggle.clicked.connect(self.toggle_developer_mode)
         layout.addWidget(self.dev_mode_toggle)
+        self.dev_mode_toggle.hide()
         
         # States selector
         self.states_label = QLabel("Select State:")
@@ -149,6 +160,8 @@ class SettingsApp(QWidget):
         self.exit_dev_button.hide()
         layout.addWidget(self.exit_dev_button)
 
+        self.refresh_feature_access()
+
         self.setLayout(layout)
 
         self.pet = None
@@ -173,6 +186,40 @@ class SettingsApp(QWidget):
     def change_theme(self, theme_name):
         app = QApplication.instance()
         app.setStyleSheet(load_theme(theme_name))
+
+    def refresh_feature_access(self):
+        manager = None
+        if hasattr(self, "parent_window") and self.parent_window is not None:
+            manager = getattr(self.parent_window, "advancement_manager", None)
+
+        if manager is None:
+            return
+
+        manager.sync_feature_unlocks()
+
+        dark_unlocked = manager.has_feature_unlocked("dark_theme")
+        cyber_unlocked = manager.has_feature_unlocked("cyber_theme")
+        bgm_unlocked = manager.has_feature_unlocked("bgm")
+        dev_unlocked = manager.has_feature_unlocked("developer_mode")
+
+        self.dark_theme_btn.setVisible(dark_unlocked)
+        self.cyber_theme_btn.setVisible(cyber_unlocked)
+
+        self.bgm_label.setVisible(bgm_unlocked)
+        self.bgm_slider.setVisible(bgm_unlocked)
+        self.bgm_status_label.setVisible(bgm_unlocked)
+        self.bgm_tracks_label.setVisible(bgm_unlocked)
+        self.bgm_play_button.setVisible(bgm_unlocked)
+        self.bgm_stop_button.setVisible(bgm_unlocked)
+
+        for btn in self.bgm_tracks_buttons.values():
+            btn.setVisible(bgm_unlocked)
+
+        self.dev_mode_label.setVisible(dev_unlocked)
+        self.dev_mode_toggle.setVisible(dev_unlocked)
+        self.states_label.setVisible(dev_unlocked and self.developer_mode)
+        self.actions_label.setVisible(dev_unlocked and self.developer_mode)
+        self.exit_dev_button.setVisible(dev_unlocked and self.developer_mode)
     # Advancement Window
     # =========================
     def show_advancements(self):
@@ -201,11 +248,13 @@ class SettingsApp(QWidget):
         self.parent_window.advancement_manager.add_progress(
             "feed_10"
         )
+        self.refresh_feature_access()
     def play_action(self):
         if self.pet:
             self.pet.trigger_random_action()
 
             self.parent_window.advancement_manager.add_progress("play_20")
+            self.refresh_feature_access()
 
     # =========================
     # Volume Functions
@@ -358,6 +407,7 @@ class SettingsApp(QWidget):
     def toggle_developer_mode(self):
         """Toggle developer mode on/off"""
         self.developer_mode = not self.developer_mode
+        self.refresh_feature_access()
         
         if self.developer_mode:
             self.dev_mode_toggle.setText("Disable Developer Mode")
