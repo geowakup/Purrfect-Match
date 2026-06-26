@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+
+save_data.json
+advancements.json
+
+data.json/tasks.json
