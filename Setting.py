@@ -14,6 +14,7 @@ from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtMultimedia import QMediaPlayer
 from shop_system import ShopSystem
 from styles import load_theme
+from system.quest_system import QuestSystem
 
 
 # =========================
@@ -32,14 +33,14 @@ class SettingsApp(QWidget):
         # Theme Button
         #=========================
         self.pink_theme_btn = QPushButton("Pink Theme")
-        self.dark_theme_btn = QPushButton("Dark Theme")
-        self.cyber_theme_btn = QPushButton("Cyber Theme")
+        self.dark_theme_btn = QPushButton("🔒 Dark Theme")
+        self.cyber_theme_btn = QPushButton("🔒 Cyber Theme")
 
         layout.addWidget(self.pink_theme_btn)
         layout.addWidget(self.dark_theme_btn)
         layout.addWidget(self.cyber_theme_btn)
-        self.dark_theme_btn.hide()
-        self.cyber_theme_btn.hide()
+        self.dark_theme_btn.setEnabled(False)
+        self.cyber_theme_btn.setEnabled(False)
 
         self.pink_theme_btn.clicked.connect(
         lambda: self.change_theme("pink")
@@ -70,6 +71,32 @@ class SettingsApp(QWidget):
 
         self.shop_system = ShopSystem()
 
+        self.coins_label = QLabel("Coins: 0")
+        layout.addWidget(self.coins_label)
+
+        self.quest_title = QLabel("Daily Quests")
+        layout.addWidget(self.quest_title)
+
+        self.quest_layout = QVBoxLayout()
+        self.quest_labels = []
+        layout.addLayout(self.quest_layout)
+
+        self.refresh_quests_button = QPushButton("Refresh Quests")
+        self.refresh_quests_button.clicked.connect(self.load_quests)
+        layout.addWidget(self.refresh_quests_button)
+
+        self.quest_system = QuestSystem()
+
+        self.river_flow_button = QPushButton("🔒 River Flow to You")
+        self.river_flow_button.clicked.connect(lambda: self.select_character("river_flow_to_you"))
+        self.river_flow_button.setEnabled(False)
+        layout.addWidget(self.river_flow_button)
+
+        self.summer_ghost_button = QPushButton("🔒 Summer Ghost")
+        self.summer_ghost_button.clicked.connect(lambda: self.select_character("summer_ghost"))
+        self.summer_ghost_button.setEnabled(False)
+        layout.addWidget(self.summer_ghost_button)
+
         # =========================
         # Hidden Golden Finger Buttons
         # =========================
@@ -88,53 +115,54 @@ class SettingsApp(QWidget):
         # =========================
         self.bgm_label = QLabel("Background Music Volume: 100")
         layout.addWidget(self.bgm_label)
-        self.bgm_label.hide()
+        self.bgm_label.setEnabled(False)
 
         self.bgm_slider = QSlider(Qt.Horizontal)
         self.bgm_slider.setRange(0, 100)
         self.bgm_slider.setValue(100)
         self.bgm_slider.valueChanged.connect(self.change_bgm_volume)
         layout.addWidget(self.bgm_slider)
-        self.bgm_slider.hide()
+        self.bgm_slider.setEnabled(False)
 
-        self.bgm_status_label = QLabel("BGM: Stopped")
+        self.bgm_status_label = QLabel("🔒 BGM Locked")
         layout.addWidget(self.bgm_status_label)
-        self.bgm_status_label.hide()
 
         # BGM Track Selection
-        self.bgm_tracks_label = QLabel("Select BGM Track:")
+        self.bgm_tracks_label = QLabel("🔒 Select BGM Track:")
         layout.addWidget(self.bgm_tracks_label)
-        self.bgm_tracks_label.hide()
         self.bgm_tracks_layout = QHBoxLayout()
+        self.bgm_tracks_placeholder = QLabel("🔒 Locked until BGM is unlocked")
+        self.bgm_tracks_placeholder.setEnabled(False)
+        self.bgm_tracks_layout.addWidget(self.bgm_tracks_placeholder)
         self.bgm_tracks_buttons = {}
         layout.addLayout(self.bgm_tracks_layout)
         self.bgm_tracks_layout.setContentsMargins(0, 0, 0, 0)
 
         self.bgm_button_layout = QHBoxLayout()
-        self.bgm_play_button = QPushButton("Play BGM")
+        self.bgm_play_button = QPushButton("🔒 Play BGM")
         self.bgm_play_button.clicked.connect(self.play_bgm)
         self.bgm_button_layout.addWidget(self.bgm_play_button)
-        self.bgm_play_button.hide()
+        self.bgm_play_button.setEnabled(False)
 
-        self.bgm_stop_button = QPushButton("Stop BGM")
+        self.bgm_stop_button = QPushButton("🔒 Stop BGM")
         self.bgm_stop_button.clicked.connect(self.stop_bgm)
         self.bgm_button_layout.addWidget(self.bgm_stop_button)
-        self.bgm_stop_button.hide()
+        self.bgm_stop_button.setEnabled(False)
 
         layout.addLayout(self.bgm_button_layout)
 
         # =========================
         # Developer Mode Section
         # =========================
-        self.dev_mode_label = QLabel("Developer Mode")
+        self.dev_mode_label = QLabel("🔒 Developer Mode")
         layout.addWidget(self.dev_mode_label)
-        self.dev_mode_label.hide()
+        self.dev_mode_label.setEnabled(False)
         
-        self.dev_mode_toggle = QPushButton("Enable Developer Mode")
+        self.dev_mode_toggle = QPushButton("🔒 Enable Developer Mode")
         self.dev_mode_toggle.setCheckable(True)
         self.dev_mode_toggle.clicked.connect(self.toggle_developer_mode)
         layout.addWidget(self.dev_mode_toggle)
-        self.dev_mode_toggle.hide()
+        self.dev_mode_toggle.setEnabled(False)
         
         # States selector
         self.states_label = QLabel("Select State:")
@@ -161,6 +189,7 @@ class SettingsApp(QWidget):
         layout.addWidget(self.exit_dev_button)
 
         self.refresh_feature_access()
+        self.load_quests()
 
         self.setLayout(layout)
 
@@ -202,30 +231,88 @@ class SettingsApp(QWidget):
         bgm_unlocked = manager.has_feature_unlocked("bgm")
         dev_unlocked = manager.has_feature_unlocked("developer_mode")
 
-        self.dark_theme_btn.setVisible(dark_unlocked)
-        self.cyber_theme_btn.setVisible(cyber_unlocked)
+        self.dark_theme_btn.setEnabled(dark_unlocked)
+        self.cyber_theme_btn.setEnabled(cyber_unlocked)
 
-        self.bgm_label.setVisible(bgm_unlocked)
-        self.bgm_slider.setVisible(bgm_unlocked)
-        self.bgm_status_label.setVisible(bgm_unlocked)
-        self.bgm_tracks_label.setVisible(bgm_unlocked)
-        self.bgm_play_button.setVisible(bgm_unlocked)
-        self.bgm_stop_button.setVisible(bgm_unlocked)
+        river_unlocked = manager.has_feature_unlocked("river_flow")
+        summer_unlocked = manager.has_feature_unlocked("summer_ghost")
 
-        for btn in self.bgm_tracks_buttons.values():
-            btn.setVisible(bgm_unlocked)
+        self.river_flow_button.setEnabled(river_unlocked)
+        self.river_flow_button.setText("River Flow to You" if river_unlocked else "🔒 River Flow to You")
+        self.summer_ghost_button.setEnabled(summer_unlocked)
+        self.summer_ghost_button.setText("Summer Ghost" if summer_unlocked else "🔒 Summer Ghost")
 
-        self.dev_mode_label.setVisible(dev_unlocked)
-        self.dev_mode_toggle.setVisible(dev_unlocked)
+        self.bgm_label.setEnabled(bgm_unlocked)
+        self.bgm_slider.setEnabled(bgm_unlocked)
+        self.bgm_status_label.setText("🔒 BGM Locked" if not bgm_unlocked else "🎵 BGM Unlocked")
+        self.bgm_tracks_label.setText("🔒 Select BGM Track:" if not bgm_unlocked else "Select BGM Track:")
+        self.bgm_tracks_label.setEnabled(bgm_unlocked)
+        self.bgm_play_button.setEnabled(bgm_unlocked)
+        self.bgm_stop_button.setEnabled(bgm_unlocked)
+        self.bgm_play_button.setText("🔒 Play BGM" if not bgm_unlocked else "Play BGM")
+        self.bgm_stop_button.setText("🔒 Stop BGM" if not bgm_unlocked else "Stop BGM")
+        self.bgm_tracks_placeholder.setVisible(not bgm_unlocked)
+
+        if bgm_unlocked:
+            self.populate_bgm_tracks()
+        else:
+            self.clear_bgm_tracks()
+
+        self.dev_mode_label.setText("🔒 Developer Mode" if not dev_unlocked else "Developer Mode")
+        self.dev_mode_label.setEnabled(dev_unlocked)
+        self.dev_mode_toggle.setText("🔒 Enable Developer Mode" if not dev_unlocked else "Enable Developer Mode")
+        self.dev_mode_toggle.setEnabled(dev_unlocked)
         self.states_label.setVisible(dev_unlocked and self.developer_mode)
         self.actions_label.setVisible(dev_unlocked and self.developer_mode)
         self.exit_dev_button.setVisible(dev_unlocked and self.developer_mode)
+
+        self.update_coin_label()
     # Advancement Window
     # =========================
     def show_advancements(self):
         advancement_text = (self.parent_window.advancement_manager.get_advancement_text())
 
         QMessageBox.information(self,"Advancements",advancement_text)
+
+    def update_coin_label(self):
+        coins = self.pet.coins if self.pet else 0
+        self.coins_label.setText(f"Coins: {coins}")
+
+    def load_quests(self):
+        if not hasattr(self, "quest_system"):
+            self.quest_system = QuestSystem()
+
+        quests = self.quest_system.get_quests()
+
+        for label in self.quest_labels:
+            self.quest_layout.removeWidget(label)
+            label.deleteLater()
+        self.quest_labels.clear()
+
+        for quest in quests:
+            quest_text = f"{quest['progress']}/{quest['goal']} - {quest['name']}"
+            label = QLabel(quest_text)
+            label.setWordWrap(True)
+            self.quest_layout.addWidget(label)
+            self.quest_labels.append(label)
+
+    def select_character(self, name):
+        if not hasattr(self, "parent_window") or self.parent_window is None:
+            QMessageBox.warning(self, "Character", "Character selection is not available.")
+            return
+
+        if not hasattr(self.parent_window, "advancement_manager"):
+            QMessageBox.warning(self, "Character", "Advancement manager is not available.")
+            return
+
+        manager = self.parent_window.advancement_manager
+        manager.sync_feature_unlocks()
+        feature_name = "river_flow" if name == "river_flow_to_you" else "summer_ghost"
+        if not manager.has_feature_unlocked(feature_name):
+            QMessageBox.warning(self, "Character", "This character is locked.")
+            return
+
+        self.parent_window.change_character(name)
 
     # =========================
     # Golden Finger Toggle
@@ -273,6 +360,14 @@ class SettingsApp(QWidget):
             QMessageBox.warning(self, "BGM", "BGM controller not available.")
             return
 
+        if not hasattr(self.parent_window, "advancement_manager"):
+            QMessageBox.warning(self, "BGM", "BGM unlock manager not available.")
+            return
+
+        if not self.parent_window.advancement_manager.has_feature_unlocked("bgm"):
+            QMessageBox.warning(self, "BGM", "BGM is locked until unlocked by achievements.")
+            return
+
         if not hasattr(self.parent_window, "bgm_player"):
             QMessageBox.warning(self, "BGM", "BGM player is not initialized.")
             return
@@ -291,6 +386,14 @@ class SettingsApp(QWidget):
     def stop_bgm(self):
         if not hasattr(self, "parent_window") or self.parent_window is None:
             QMessageBox.warning(self, "BGM", "BGM controller not available.")
+            return
+
+        if not hasattr(self.parent_window, "advancement_manager"):
+            QMessageBox.warning(self, "BGM", "BGM unlock manager not available.")
+            return
+
+        if not self.parent_window.advancement_manager.has_feature_unlocked("bgm"):
+            QMessageBox.warning(self, "BGM", "BGM is locked until unlocked by achievements.")
             return
 
         if not hasattr(self.parent_window, "bgm_player"):
@@ -313,6 +416,17 @@ class SettingsApp(QWidget):
             self.bgm_status_label.setText("BGM: Unknown")
             return
 
+        if not hasattr(self.parent_window, "advancement_manager"):
+            self.bgm_status_label.setText("BGM: Unknown")
+            return
+
+        bgm_unlocked = self.parent_window.advancement_manager.has_feature_unlocked("bgm")
+        if not bgm_unlocked:
+            self.bgm_status_label.setText("🔒 BGM Locked")
+            self.bgm_play_button.setEnabled(False)
+            self.bgm_stop_button.setEnabled(False)
+            return
+
         if not hasattr(self.parent_window, "bgm_player"):
             self.bgm_status_label.setText("BGM: Not initialized")
             return
@@ -325,13 +439,29 @@ class SettingsApp(QWidget):
         else:
             self.bgm_status_label.setText("BGM: Stopped")
 
-        self.bgm_play_button.setEnabled(not player.player.playbackState() == QMediaPlayer.PlayingState)
+        self.bgm_play_button.setEnabled(player.player.playbackState() != QMediaPlayer.PlayingState)
         self.bgm_stop_button.setEnabled(player.player.playbackState() == QMediaPlayer.PlayingState)
+
+    def clear_bgm_tracks(self):
+        for btn in list(self.bgm_tracks_buttons.values()):
+            self.bgm_tracks_layout.removeWidget(btn)
+            btn.deleteLater()
+        self.bgm_tracks_buttons.clear()
 
     def populate_bgm_tracks(self):
         """Populate track selection buttons from available BGM tracks"""
         if not hasattr(self, "parent_window") or self.parent_window is None:
             return
+
+        if not hasattr(self.parent_window, "advancement_manager"):
+            return
+
+        if not self.parent_window.advancement_manager.has_feature_unlocked("bgm"):
+            self.clear_bgm_tracks()
+            self.bgm_tracks_placeholder.setVisible(True)
+            return
+
+        self.bgm_tracks_placeholder.setVisible(False)
 
         if not hasattr(self.parent_window, "bgm_player"):
             return
@@ -340,10 +470,7 @@ class SettingsApp(QWidget):
         tracks = player.get_all_tracks()
 
         # Clear existing buttons
-        for btn in self.bgm_tracks_buttons.values():
-            self.bgm_tracks_layout.removeWidget(btn)
-            btn.deleteLater()
-        self.bgm_tracks_buttons.clear()
+        self.clear_bgm_tracks()
 
         if not tracks:
             return
@@ -398,6 +525,7 @@ class SettingsApp(QWidget):
 
         if success:
             QMessageBox.information(self, "Shop", message)
+            self.update_coin_label()
         else:
             QMessageBox.warning(self, "Shop", message)
 

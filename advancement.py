@@ -8,13 +8,19 @@ class AdvancementsManager:
         self.save_file = save_file or os.path.join(
             self.BASE_DIR,
             "data",
+            "advancement.json"
+        )
+        self.legacy_save_file = os.path.join(
+            self.BASE_DIR,
+            "data",
             "advancements.json"
         )
 
         self.advancements = {
             "first_launch": {
                 "name": "🐣 First Launch",
-                "unlocked": False
+                "unlocked": False,
+                "reward": "Welcome bonus"
             },
 
             "feed_10": {
@@ -22,7 +28,8 @@ class AdvancementsManager:
                 "progress": 0,
                 "goal": 10,
                 "unlocked": False,
-                "features": ["dark_theme"]
+                "features": ["dark_theme", "river_flow"],
+                "reward": "Unlock Dark Theme and River Flow"
             },
 
             "play_20": {
@@ -30,7 +37,8 @@ class AdvancementsManager:
                 "progress": 0,
                 "goal": 20,
                 "unlocked": False,
-                "features": ["bgm"]
+                "features": ["bgm"],
+                "reward": "Unlock BGM"
             },
 
             "alive_1_hour": {
@@ -38,37 +46,43 @@ class AdvancementsManager:
                 "progress": 0,
                 "goal": 3600,
                 "unlocked": False,
-                "features": ["developer_mode"]
+                "features": ["developer_mode"],
+                "reward": "Unlock Developer Mode"
             },
 
             "golden_finger": {
                 "name": "👑 Unlock Golden Finger",
                 "unlocked": False,
-                "features": ["cyber_theme"]
+                "features": ["cyber_theme", "summer_ghost"],
+                "reward": "Unlock Cyber Theme and Summer Ghost"
             },
 
             "unlock_bgm": {
                 "name": "🎵 Unlock BGM",
                 "unlocked": False,
-                "features": ["bgm"]
+                "features": ["bgm"],
+                "reward": "Unlock BGM"
             },
 
             "unlock_dark_theme": {
                 "name": "🌙 Unlock Dark Theme",
                 "unlocked": False,
-                "features": ["dark_theme"]
+                "features": ["dark_theme"],
+                "reward": "Unlock Dark Theme"
             },
 
             "unlock_cyber_theme": {
                 "name": "💫 Unlock Cyber Theme",
                 "unlocked": False,
-                "features": ["cyber_theme"]
+                "features": ["cyber_theme"],
+                "reward": "Unlock Cyber Theme"
             },
 
             "unlock_developer_mode": {
                 "name": "🛠️ Unlock Developer Mode",
                 "unlocked": False,
-                "features": ["developer_mode"]
+                "features": ["developer_mode"],
+                "reward": "Unlock Developer Mode"
             }
         }
 
@@ -132,6 +146,12 @@ class AdvancementsManager:
                 indent=4
             )
 
+        if os.path.exists(self.legacy_save_file):
+            try:
+                os.remove(self.legacy_save_file)
+            except OSError:
+                pass
+
     # ------------------------
     # Load Data
     # ------------------------
@@ -139,32 +159,40 @@ class AdvancementsManager:
         if os.path.exists(self.save_file):
             with open(self.save_file, "r") as file:
                 loaded_data = json.load(file)
+        elif os.path.exists(self.legacy_save_file):
+            with open(self.legacy_save_file, "r") as file:
+                loaded_data = json.load(file)
+            self.save_data()
+        else:
+            return
 
-            merged_data = {}
-            for key, default_advancement in self.advancements.items():
-                if key not in loaded_data:
-                    merged_data[key] = default_advancement.copy()
-                    continue
+        merged_data = {}
+        for key, default_advancement in self.advancements.items():
+            if key not in loaded_data:
+                merged_data[key] = default_advancement.copy()
+                continue
 
-                loaded_advancement = loaded_data[key]
-                if not isinstance(loaded_advancement, dict):
-                    merged_data[key] = default_advancement.copy()
-                    continue
+            loaded_advancement = loaded_data[key]
+            if not isinstance(loaded_advancement, dict):
+                merged_data[key] = default_advancement.copy()
+                continue
 
-                merged_advancement = default_advancement.copy()
-                merged_advancement.update(loaded_advancement)
-                if "features" not in merged_advancement:
-                    merged_advancement["features"] = default_advancement.get("features", [])
-                merged_data[key] = merged_advancement
+            merged_advancement = default_advancement.copy()
+            merged_advancement.update(loaded_advancement)
+            if "features" not in merged_advancement:
+                merged_advancement["features"] = default_advancement.get("features", [])
+            merged_data[key] = merged_advancement
 
-            self.advancements = merged_data
+        self.advancements = merged_data
 
     def sync_feature_unlocks(self):
         self.feature_unlocks = {
             "dark_theme": False,
             "cyber_theme": False,
             "bgm": False,
-            "developer_mode": False
+            "developer_mode": False,
+            "river_flow": False,
+            "summer_ghost": False
         }
 
         for advancement in self.advancements.values():
@@ -182,7 +210,6 @@ class AdvancementsManager:
         lines = []
 
         for data in self.advancements.values():
-
             if "goal" in data:
                 text = (
                     f"{data['name']} "
@@ -192,9 +219,15 @@ class AdvancementsManager:
             else:
                 text = data["name"]
 
-            if data["unlocked"]:
+            if data.get("unlocked", False):
                 text += " ✅"
+            else:
+                text += " 🔒"
+
+            reward = data.get("reward")
+            if reward:
+                text += f"\n   Reward: {reward}"
 
             lines.append(text)
 
-        return "\n".join(lines)
+        return "\n\n".join(lines)
