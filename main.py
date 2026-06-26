@@ -4,11 +4,10 @@ import random
 
 from PySide6.QtCore import Qt, QPropertyAnimation, QTimer, QSize
 from PySide6.QtGui import QMovie, QCursor, QPixmap
+from shop_system import ShopSystem 
 from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QWidget
 
 from CharacterSelect import CharacterSelectApp
-from Setting import SettingsApp
-from Todo import TodoApp
 from advancement import AdvancementsManager
 from bgm import BGMPlayer
 from cat import CatCharacter
@@ -69,7 +68,8 @@ class PetWindow(QWidget):
         self.pet.state = "idle"
         self.pet.action = None
 
-        self._setup_window()
+        self._setup_window()self.shop_window = None
+        self.inventory_window = None
         self._setup_label()
         self._setup_buttons()
         self._setup_timers()
@@ -170,6 +170,61 @@ class PetWindow(QWidget):
             """
         )
         add_glow(self.settings_button, "#7aa2ff")
+
+# ---------------------------- Shop Button ----------------------------
+        self.shop_button = QPushButton("Shop", self)
+
+        self.shop_button.setGeometry(78, 160, 70, 30)
+
+        self.shop_button.clicked.connect(
+            self.open_shop
+        )
+
+        self.shop_button.setStyleSheet("""
+        QPushButton {
+            background-color: rgba(255,180,0,220);
+            color:white;
+            border-radius:10px;
+            font-weight:bold;
+        }
+
+        QPushButton:hover {
+            background-color: rgba(255,210,80,255);
+        }
+        """)
+
+        add_glow(self.shop_button, "#ffb24d")
+
+        self.shop_button.hide()
+
+# ---------------------------- Inventory Button ----------------------------
+        self.inventory_button = QPushButton(
+            "Inventory",
+            self
+        )
+
+        self.inventory_button.setGeometry(60, 110, 100, 30)
+
+        self.inventory_button.clicked.connect(
+            self.open_inventory
+        )
+
+        self.inventory_button.setStyleSheet("""
+        QPushButton{
+        background-color: rgba(140,100,255,220);
+        color:white;
+        border-radius:10px;
+        font-weight:bold;
+        }
+
+        QPushButton:hover{
+        background-color: rgba(180,150,255,255);
+        }
+        """)
+
+        add_glow(self.inventory_button, "#aa88ff")
+
+        self.inventory_button.hide()
 
     def _setup_timers(self):
         self.hover_timer = QTimer()
@@ -360,6 +415,8 @@ class PetWindow(QWidget):
         self.anim.finished.connect(self.todo_button.hide)
         self.anim.finished.connect(self.settings_button.hide)
         self.anim.finished.connect(self.character_button.hide)
+        self.anim.finished.connect(self.shop_button.hide)
+        self.anim.finished.connect(self.inventory_button.hide)   
         self.anim.start()
 
 # ------------------------ Check and trigger ------------------------
@@ -371,6 +428,8 @@ class PetWindow(QWidget):
             self.todo_button.show()
             self.settings_button.show()
             self.character_button.show()
+            self.shop_button.show()
+            self.inventory_button.show()
 
             self.anim.stop()
             self.anim.setStartValue(self.todo_button.windowOpacity())
@@ -405,6 +464,53 @@ class PetWindow(QWidget):
         self.character_window.show()
         self.character_window.raise_()
         self.character_window.activateWindow()
+
+# ------------------------
+# Open Shop Window
+# ------------------------
+    def open_shop(self):
+
+        if self.shop_window is None or not self.shop_window.isVisible():
+
+            self.shop_window = ShopWindow(self.pet)
+
+            self.shop_window.setWindowFlag(
+                Qt.WindowStaysOnTopHint,
+                True
+            )
+
+        self.shop_window.show()
+        self.shop_window.raise_()
+        self.shop_window.activateWindow()
+
+# ------------------------
+# Open Inventory Window
+# ------------------------
+    def open_inventory(self):
+
+        if (
+            self.inventory_window is None
+            or not self.inventory_window.isVisible()
+        ):
+
+            self.inventory_window = (
+                InventoryWindow(
+                    self.pet
+                )
+            )
+
+            self.inventory_window.setWindowFlag(
+                Qt.WindowStaysOnTopHint,
+                True
+            )
+
+        self.inventory_window.refresh()
+
+        self.inventory_window.show()
+
+        self.inventory_window.raise_()
+
+        self.inventory_window.activateWindow()
 
 #------------------------ Change Character (called from character select) ------------------------
     def change_character(self, name):
@@ -516,6 +622,7 @@ class PetWindow(QWidget):
             self.drag_pos = current_pos
     
     def closeEvent(self, event):
+
         if self.todo_window is not None:
             self.todo_window.close()
 
