@@ -75,7 +75,8 @@ class PetWindow(QWidget):
         self._setup_timers()
 
         self.load_character_asset(self.current_character)
-        if self.bgm_player.has_tracks():
+        self.bgm_player.stop()
+        if self.bgm_player.has_tracks() and self._bgm_is_unlocked():
             self.bgm_player.play()
 
     def _load_saved_character(self):
@@ -89,6 +90,13 @@ class PetWindow(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WA_NoSystemBackground, True)
         self.setStyleSheet("background: transparent; border:none;")
+
+    def _bgm_is_unlocked(self):
+        return (
+            hasattr(self, "advancement_manager")
+            and self.advancement_manager is not None
+            and self.advancement_manager.has_feature_unlocked("bgm")
+        )
 
     def _setup_label(self):
         self.label = QLabel(self)
@@ -392,6 +400,7 @@ class PetWindow(QWidget):
             self.character_window.setWindowFlag(Qt.WindowStaysOnTopHint, True)
 
         self.character_window.parent_window = self
+        self.character_window.refresh_feature_access()
 
         self.character_window.show()
         self.character_window.raise_()
@@ -409,12 +418,15 @@ class PetWindow(QWidget):
             self.settings_window = SettingsApp()
             self.settings_window.setWindowFlag(Qt.WindowStaysOnTopHint, True)
 
-            self.settings_window.pet = self.pet
-            self.settings_window.parent_window = self
-            if hasattr(self.settings_window, "update_bgm_status"):
-                self.settings_window.update_bgm_status()
-            if hasattr(self.settings_window, "populate_bgm_tracks"):
-                self.settings_window.populate_bgm_tracks()
+        self.settings_window.pet = self.pet
+        self.settings_window.parent_window = self
+        self.settings_window.refresh_feature_access()
+        self.settings_window.load_quests()
+        self.settings_window.update_coin_label()
+        if hasattr(self.settings_window, "update_bgm_status"):
+            self.settings_window.update_bgm_status()
+        if hasattr(self.settings_window, "populate_bgm_tracks"):
+            self.settings_window.populate_bgm_tracks()
 
         self.settings_window.show()
         self.settings_window.raise_()
