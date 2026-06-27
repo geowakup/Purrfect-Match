@@ -5,33 +5,14 @@ from datetime import date
     
 class QuestSystem:
 
-    def __init__(self):
+   def __init__(self):
 
-        self.db = Database()
-        self.filename = "quests.json"
+    self.db = Database()
+    self.filename = "quests.json"
 
-        self.last_reset = str(date.today())
+    self.last_reset = str(date.today())
 
-        self.check_daily_reset()
-
-
-    def check_daily_reset(self):
-
-        today = str(date.today())
-
-        if self.last_reset != today:
-
-            quests = self.db.load(self.filename)
-
-            for quest in quests:
-
-                quest["progress"] = 0
-                quest["completed"] = False
-
-            self.db.save(self.filename, quests)
-
-            self.last_reset = today    
-        
+   
 
         
     # -------------------
@@ -98,8 +79,8 @@ class QuestSystem:
 
                     quest["happiness_reward"] = 5 
 
-                    print("Quest completed: {quest['name']}")
-
+                    print(f"Quest completed: {quest['name']}")
+                    
         self.save_quests(quests)
 
     # -------------------
