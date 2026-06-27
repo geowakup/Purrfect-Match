@@ -1,193 +1,174 @@
-from system.reward_manager import RewardSystem
+from PySide6.QtWidgets import (
+    QWidget,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QFrame
+)
+
+from PySide6.QtCore import Qt
+
 from system.quest_system import QuestSystem
-import tkinter as tk
+from system.reward_manager import RewardSystem
+from system.pet_system import PetSystem
 
-# MAIN WINDOW
-window = tk.Tk()
-quests = QuestSystem()
-quests.update_progress("Open app 3 times")
-quest_data = quests.get_quests()
-rewards = RewardSystem()
-hunger = 100
-happiness = 100
-rewards.add_reward(20, "Starting coins")
 
-window.title("Purrfect Match 🐾")
-window.geometry("500x650")
-window.configure(bg="#FFE4EC")  # pastel pink background
+class DailyQuestApp(QWidget):
 
-# TITLE
-title = tk.Label(
-    window,
-    text="🐾Purrfect Match 🐾",
-    font=("Comic Sans MS", 22, "bold"),
-    bg="#FFE4EC",
-    fg="#FF4F87"
-)
-title.pack(pady=15)
+    def __init__(self):
+        super().__init__()
 
-# PET DISPLAY
-pet_label = tk.Label(
-    window,
-    text="🐱",
-    font=("Arial", 70),
-    bg="#FFE4EC"
-)
-pet_label.pack()
-stats = tk.Label(
-    window,
-    text="🍖 Hunger: 100\n😊 Happiness: 100",
-    font=("Comic Sans MS", 12),
-    bg="#FFF0F5",
-    fg="#8B3A62",
-    padx=15,
-    pady=10
-)
+        self.quests = QuestSystem()
+        self.rewards = RewardSystem()
+        self.pet = PetSystem()
 
-stats.pack(pady=10)
+        self.setWindowTitle("Daily Quest")
+        self.resize(400, 600)
 
-# COINS DISPLAY
-coins = tk.Label(
-    window,
-    text=" Coins: 20",
-    font=("Comic Sans MS", 14, "bold"),
-    bg="#FFF0F5",
-    fg="#C71585",
-    padx=15,
-    pady=10
-)
-coins.pack(pady=10)
+        self.setStyleSheet("""
+            QWidget{
+                background:#FFE4EC;
+            }
 
-# QUEST TITLE
-quest_title = tk.Label(
-    window,
-    text=" Daily Quests ",
-    font=("Comic Sans MS", 16, "bold"),
-    bg="#FFE4EC",
-    fg="#DB3E6F"
-)
-quest_title.pack(pady=10)
+            QLabel{
+                font-size:14px;
+            }
 
-def load_quests():
+            QPushButton{
+                background:#FF69B4;
+                color:white;
+                border-radius:10px;
+                padding:8px;
+                font-weight:bold;
+            }
 
-    quest_data = quests.get_quests()
+            QPushButton:hover{
+                background:#FF4F87;
+            }
+        """)
 
-    for quest in quest_data:
+        self.layout = QVBoxLayout()
 
-        quest_text = f"{quest['progress']}/{quest['goal']} - {quest['name']}"
+        title = QLabel("🐾 Purrfect Match 🐾")
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("""
+            font-size:22px;
+            font-weight:bold;
+            color:#FF4F87;
+        """)
 
-        quest_label = tk.Label(
-            window,
-            text=quest_text,
-            font=("Segoe UI", 12),
-            bg="#FFF0F5",
-            width=30,
-            pady=8
+        self.layout.addWidget(title)
+
+        self.pet_label = QLabel("🐱")
+        self.pet_label.setAlignment(Qt.AlignCenter)
+        self.pet_label.setStyleSheet("font-size:70px;")
+
+        self.layout.addWidget(self.pet_label)
+
+        self.stats = QLabel()
+        self.stats.setAlignment(Qt.AlignCenter)
+
+        self.layout.addWidget(self.stats)
+
+        self.coins = QLabel()
+        self.coins.setAlignment(Qt.AlignCenter)
+
+        self.layout.addWidget(self.coins)
+
+        quest_title = QLabel("Daily Quests")
+        quest_title.setAlignment(Qt.AlignCenter)
+        quest_title.setStyleSheet("""
+            font-size:18px;
+            font-weight:bold;
+        """)
+
+        self.layout.addWidget(quest_title)
+
+        self.quest_frame = QFrame()
+        self.quest_layout = QVBoxLayout()
+
+        self.quest_frame.setLayout(self.quest_layout)
+
+        self.layout.addWidget(self.quest_frame)
+
+        self.feed_button = QPushButton("🍖 Feed Pet")
+        self.feed_button.clicked.connect(self.feed_pet)
+
+        self.layout.addWidget(self.feed_button)
+
+        self.status = QLabel("Pet is waiting for food!")
+        self.status.setAlignment(Qt.AlignCenter)
+
+        self.layout.addWidget(self.status)
+
+        self.setLayout(self.layout)
+        self.load_pet()
+        self.load_quests() 
+
+
+
+    def load_pet(self):
+        pet = self.pet.get_pet()
+
+        self.stats.setText(
+            f"🍖 Hunger: {pet['food']}\n"
+            f"😊 Happiness: {pet['happiness']}"
         )
 
-        quest_label.pack(pady=5)
-        if quest["completed"]:
-
-         global hunger, happiness
-
-    hunger = min(
-        hunger + quest.get("food_reward", 0),
-        100
-    )
-
-    happiness = min(
-        happiness + quest.get("happiness_reward", 0),
-        100
-    )
-
-    stats.config(
-        text=f"🍖 Hunger: {hunger}\n😊 Happiness: {happiness}"
-    )
-
-
-load_quests()
-
-def feed_pet():
-
-    global hunger, happiness
-
-    if rewards.get_balance() >= 10:
-
-        rewards.spend_reward(10, "Fed pet")
-
-        quests.update_progress("Complete 1 task")
-
-        coins.config(
-            text=f" Coins: {rewards.get_balance()}"
+        self.coins.setText(
+            f"🪙 Coins: {self.rewards.get_balance()}"
         )
 
-        hunger = min(hunger + 10, 100)
 
-        for quest in quest_data:
+    def load_quests(self):
 
-            if quest ["completed"]:
+        while self.quest_layout.count():
+            child = self.quest_layout.takeAt(0)
 
-                hunger = min(
-                    hunger + quest["reward"],
-                    100
-                )
+            if child.widget():
+                child.widget().deleteLater()
 
-        happiness = min(happiness + 5, 100)
+        quests = self.quests.get_quests()
 
-        stats.config(
-            text=f"🍖 Hunger: {hunger}\n😊 Happiness: {happiness}"
-        )
+        for quest in quests:
 
-        status.config(
-            text="🐱 Yum! Your pet is happy!"
-        )
+            label = QLabel(
+                f"{quest['progress']}/{quest['goal']} - {quest['name']}"
+            )
 
-    else:
+            label.setStyleSheet("""
+                background:white;
+                padding:8px;
+                border-radius:8px;
+            """)
 
-        status.config(
-            text="🐱 Not enough coins!"
-        )
-   
-# FEED BUTTON
-feed_button = tk.Button(
-    window,
-        text="🍖 Feed Pet",
-    command=feed_pet,
-    font=("Comic Sans MS", 13, "bold"),
-    bg="#FF69B4",
-    fg="white",
-    padx=15,
-    pady=8,
-    relief="raised",
-    bd=4
-)
-feed_button.pack(pady=25)
-
-# STATUS MESSAGE
-status = tk.Label(
-    window,
-    text="🐱 Pet is waiting for food!",
-    font=("Segoe UI", 11),
-    bg="#FFE4EC",
-    fg="#8B3A62",
-)
-status.pack()
-
-def decay():
-
-    global hunger, happiness
-
-    hunger = max(hunger - 1, 0)
-    happiness = max(happiness - 1, 0)
-
-    stats.config(
-        text=f"🍖 Hunger: {hunger}\n😊 Happiness: {happiness}"
-    )
-
-    window.after(5000, decay)
+            self.quest_layout.addWidget(label)
 
 
-decay()
+    def feed_pet(self):
 
-# RUN WINDOW
-window.mainloop()
+        if self.rewards.get_balance() >= 10:
+
+            self.rewards.spend_reward(10, "Feed Pet")
+
+            self.quests.update_progress("Complete 1 task")
+
+            self.load_pet()
+            self.load_quests()
+
+            self.status.setText("🐱 Yum! Your pet is happy!")
+
+        else:
+
+            self.status.setText("❌ Not enough coins!")     
+
+if __name__ == "__main__":
+    import sys
+    from  PySide6.QtWidgets import QApplication
+
+    app = QApplication(sys.argv)
+
+    window = DailyQuestApp()
+    window.show()
+
+    sys.exit(app.exec())    

@@ -1,31 +1,26 @@
+
 from system.database import Database
 from datetime import date
 
 
-    
 class QuestSystem:
 
-   def __init__(self):
+    def __init__(self):
+        self.db = Database()
+        self.filename = "quests.json"
+        self.last_reset = str(date.today())
 
-    self.db = Database()
-    self.filename = "quests.json"
-
-    self.last_reset = str(date.today())
-
-   
-
-        
     # -------------------
     # GET QUESTS
     # -------------------
     def get_quests(self):
 
-        # check daily reset first
+        # Check daily reset first
         self.reset_daily_quests()
 
         quests = self.db.load(self.filename)
 
-        # create default quests if file empty
+        # Create default quests if file is empty
         if quests is None:
 
             quests = [
@@ -36,7 +31,6 @@ class QuestSystem:
                     "reward": 20,
                     "completed": False
                 },
-
                 {
                     "name": "Open app 3 times",
                     "progress": 0,
@@ -54,7 +48,6 @@ class QuestSystem:
     # SAVE QUESTS
     # -------------------
     def save_quests(self, quests):
-
         self.db.save(self.filename, quests)
 
     # -------------------
@@ -70,27 +63,23 @@ class QuestSystem:
 
                 quest["progress"] += amount
 
-                # auto complete quest
                 if quest["progress"] >= quest["goal"]:
 
                     quest["completed"] = True
-
                     quest["reward"] = 10
-
-                    quest["happiness_reward"] = 5 
+                    quest["happiness_reward"] = 5
 
                     print(f"Quest completed: {quest['name']}")
-                    
+
         self.save_quests(quests)
 
     # -------------------
-    # DAILY RESET SYSTEM
+    # DAILY RESET
     # -------------------
     def reset_daily_quests(self):
 
         today = str(date.today())
 
-        # if new day
         if self.last_reset != today:
 
             quests = self.db.load(self.filename)
@@ -98,7 +87,6 @@ class QuestSystem:
             if quests is not None:
 
                 for quest in quests:
-
                     quest["progress"] = 0
                     quest["completed"] = False
 
@@ -106,4 +94,5 @@ class QuestSystem:
 
             self.last_reset = today
 
-            print("Daily quests reset successfully.") 
+            print("Daily quests reset successfully.")
+
