@@ -18,6 +18,9 @@ from pet import Pet
 from pet_lifecycle import PetLifecycle
 from save_system import SaveSystem
 from timer_loop import TimerLoop
+from shop_window import ShopWindow
+from inventory_window import InventoryWindow
+from shop_system import ShopSystem 
 from styles import load_theme
 
 
@@ -68,7 +71,8 @@ class PetWindow(QWidget):
         self.pet.state = "idle"
         self.pet.action = None
 
-        self._setup_window()self.shop_window = None
+        self._setup_window()
+        self.shop_window = None
         self.inventory_window = None
         self._setup_label()
         self._setup_buttons()
