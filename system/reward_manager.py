@@ -1,22 +1,41 @@
+from system.database import Database
+
+
 class RewardSystem:
+
     def __init__(self):
-        self.coins = 0
+        self.db = Database()
 
-    def add_reward(self, amount: int, reason: str = "") -> None:
-        """Add coins as a reward."""
-        self.coins += amount
+        stats = self.db.load("stats")
 
-        if reason:
-            print(f"Reward: +{amount} coins ({reason})")
-        else:
-            print(f"Reward: +{amount} coins")
+        if stats is None:
+            stats = {
+                "app_opens": 0,
+                "tasks_completed": 0,
+                "coins": 0
+            }
+
+        if "coins" not in stats:
+            stats["coins"] = 0
+
+        self.stats = stats
+
+    def save(self):
+        self.db.save("stats", self.stats)
+
+    def add_reward(self, amount, reason=""):
+        self.stats["coins"] += amount
+        self.save()
 
     def spend_reward(self, amount, reason=""):
-        if self.coins >= amount:
-            self.coins -= amount
-            print(f"-{amount} coins ({reason})")
-        else:
-            print("Not enough coins.")
+
+        if self.stats["coins"] >= amount:
+
+            self.stats["coins"] -= amount
+            self.save()
+            return True
+
+        return False
 
     def get_balance(self):
-        return self.coins
+        return self.stats["coins"]                                 

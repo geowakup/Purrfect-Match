@@ -1,4 +1,3 @@
-
 from system.database import Database
 from datetime import date
 
@@ -7,7 +6,7 @@ class QuestSystem:
 
     def __init__(self):
         self.db = Database()
-        self.filename = "quests.json"
+        self.filename = "quests"
         self.last_reset = str(date.today())
 
     # -------------------
@@ -15,12 +14,10 @@ class QuestSystem:
     # -------------------
     def get_quests(self):
 
-        # Check daily reset first
         self.reset_daily_quests()
 
         quests = self.db.load(self.filename)
 
-        # Create default quests if file is empty
         if quests is None:
 
             quests = [
@@ -29,14 +26,16 @@ class QuestSystem:
                     "progress": 0,
                     "goal": 1,
                     "reward": 20,
-                    "completed": False
+                    "completed": False,
+                    "reward_claimed": False
                 },
                 {
                     "name": "Open app 3 times",
                     "progress": 0,
                     "goal": 3,
                     "reward": 30,
-                    "completed": False
+                    "completed": False,
+                    "reward_claimed": False
                 }
             ]
 
@@ -66,8 +65,6 @@ class QuestSystem:
                 if quest["progress"] >= quest["goal"]:
 
                     quest["completed"] = True
-                    quest["reward"] = 10
-                    quest["happiness_reward"] = 5
 
                     print(f"Quest completed: {quest['name']}")
 
@@ -89,10 +86,10 @@ class QuestSystem:
                 for quest in quests:
                     quest["progress"] = 0
                     quest["completed"] = False
+                    quest["reward_claimed"] = False
 
                 self.db.save(self.filename, quests)
 
             self.last_reset = today
 
             print("Daily quests reset successfully.")
-

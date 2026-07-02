@@ -1,16 +1,18 @@
 [
     {
         "name": "Complete 1 task",
-        "progress": 1,
+        "progress": 0,
         "goal": 1,
         "reward": 20,
-        "completed": true
+        "completed": false,
+        "reward_claimed": false
     },
     {
         "name": "Open app 3 times",
-        "progress": 3,
+        "progress": 0,
         "goal": 3,
         "reward": 30,
-        "completed": true
+        "completed": false,
+        "reward_claimed": false
     }
 ]

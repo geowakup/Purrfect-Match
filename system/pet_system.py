@@ -3,7 +3,7 @@ from system.database import Database
 class PetSystem:
     def __init__(self):
         self.db = Database()
-        self.filename = "pets"
+        self.filename = "pet"
 
     # -------------------
     # GET PET DATA

@@ -11,12 +11,12 @@ class Database:
 
         # define your "tables"
         self.files = {
-            "pets": "pet.json",
-            "tasks": "tasks.json",
-            "stats": "stats.json",
-            "quests.json": "quests.json"
-        }
-
+    "pet": "pet.json",
+    "tasks": "tasks.json",
+    "stats": "stats.json",
+    "quests": "quests.json"
+}
+        
         self._initialize_files()
     # -------------------------
     # INITIALIZATION
@@ -24,19 +24,20 @@ class Database:
     def _initialize_files(self):
         """Create JSON files if they don't exist"""
         defaults = {
-            "tasks": [],
-            "quests": [],
-            "pet": {
-                "food": 50,
-                "happiness": 50,
-                "level": 1,
-                "last_updated": str(datetime.now())
-            },
-            "stats": {
-                "app_opens": 0,
-                "tasks_completed": 0
-            }
-        }
+    "pet": {
+        "food": 50,
+        "happiness": 50,
+        "level": 1,
+        "last_updated": str(datetime.now())
+    },
+    "tasks": [],
+    "quests": [],
+    "stats": {
+        "app_opens": 0,
+        "tasks_completed": 0,
+        "coins": 0
+    }
+}
 
         for key, file in self.files.items():
             path = os.path.join(self.data_folder, file)
