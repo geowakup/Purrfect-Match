@@ -16,6 +16,7 @@ class Pet:
         self.coins = 100
         self.inventory = []
         self.save_callback = None
+        self.quest_callback = None
 
         self.alive = True
         self.age = 0
