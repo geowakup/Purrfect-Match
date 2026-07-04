@@ -17,6 +17,12 @@ class Database:
     "quests": "quests.json"
 }
         
+            "pet": "pet.json",
+            "tasks": "tasks.json",
+            "stats": "stats.json",
+            "quests": "quests.json"
+        }
+
         self._initialize_files()
     # -------------------------
     # INITIALIZATION
@@ -99,5 +105,8 @@ class Database:
     # RESET DATABASE (debug tool)
     # -------------------------
     def reset_all(self):
-        for key in self.files:
-            self.save(key, [])
+        if os.path.exists(self.data_folder):
+            for file in os.listdir(self.data_folder):
+                os.remove(os.path.join(self.data_folder, file))
+
+        self._initialize_files()

@@ -7,6 +7,7 @@ class QuestSystem:
     def __init__(self):
         self.db = Database()
         self.filename = "quests"
+
         self.last_reset = str(date.today())
 
     # -------------------
