@@ -576,6 +576,7 @@ class PetWindow(QWidget):
         # ---------------- Death Check ----------------
         if self.lifecycle.check_death():
             print("Pet died")
+            self.timer_loop.stop()
             return
 
         # ---------------- Achievement Progress ----------------

@@ -15,7 +15,7 @@ class Pet:
         self.action = None
         self.action_timer = 0
 
-        self.coins = 100
+        self.coin = 100
         self.inventory = []
 
         self.alive = True
@@ -109,7 +109,7 @@ class Pet:
             "cleanliness": self.cleanliness,
             "state": self.state,
             "action": self.action,
-            "coin": self.coins,
+            "coin": self.coin,
             "inventory": self.inventory, 
         }
     

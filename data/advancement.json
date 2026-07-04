@@ -27,7 +27,7 @@
     },
     "alive_1_hour": {
         "name": "\ud83d\udca4 Keep Pet Alive 1 Hour",
-        "progress": 271.4,
+        "progress": 297.2,
         "goal": 3600,
         "unlocked": false,
         "features": [

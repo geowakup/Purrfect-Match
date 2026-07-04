@@ -47,7 +47,7 @@ class ShopWindow(QWidget):
     def refresh_ui(self):
 
         self.coin_label.setText(
-            f"Coins: {self.pet.coins}"
+            f"Coins: {self.pet.coin}"
         )
 
     def buy_item(self, item_name):
