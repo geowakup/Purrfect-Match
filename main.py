@@ -117,12 +117,32 @@ class PetWindow(QWidget):
         )
 
     def _setup_label(self):
-        self.label = QLabel(self)
+        # white rounded base panel behind the pet image and controls
+        self.base_panel = QWidget(self)
+        self.base_panel.setStyleSheet("background-color: white; border-radius: 12px;")
+
+        # label is a child of the base panel so the white background sits behind it
+        self.label = QLabel(self.base_panel)
         self.label.setAttribute(Qt.WA_TranslucentBackground)
         self.label.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.label.setStyleSheet("background: transparent;")
+
+        # keep a compact default window size
         self.resize(220, 240)
-        self.label.setGeometry(0, 0, 200, 200)
+
+        # initial geometry: base panel spans most of the window, label sits inside with padding
+        content_w = max(0, self.width())
+        content_h = max(0, self.height())
+        base_x, base_y = 6, 6
+        base_w = max(0, content_w - 12)
+        base_h = max(0, content_h - 12)
+        self.base_panel.setGeometry(base_x, base_y, base_w, base_h)
+
+        # label area leaves space at the bottom for buttons
+        lbl_x, lbl_y = 12, 12
+        lbl_w = max(0, base_w - 24)
+        lbl_h = max(0, base_h - 56)
+        self.label.setGeometry(lbl_x, lbl_y, lbl_w, lbl_h)
 
     def _create_button(self, text, geometry, callback, stylesheet, hidden=True):
         button = QPushButton(text, self)
@@ -137,7 +157,7 @@ class PetWindow(QWidget):
     def _setup_buttons(self):
         self.character_button = self._create_button(
             "Character",
-            (78, 200, 70, 30),
+            (76, 200, 64, 28),
             self.open_character,
             """
             QPushButton {
@@ -145,6 +165,7 @@ class PetWindow(QWidget):
                 color: white;
                 border-radius: 10px;
                 font-weight: bold;
+                font-size: 10px;
             }
             QPushButton:hover {
                 background-color: rgba(120, 230, 160, 255);
@@ -155,7 +176,7 @@ class PetWindow(QWidget):
 
         self.todo_button = self._create_button(
             "To-Do",
-            (19, 200, 55, 30),
+            (12, 200, 58, 28),
             self.open_todo,
             """
             QPushButton {
@@ -163,6 +184,7 @@ class PetWindow(QWidget):
                 color: white;
                 border-radius: 10px;
                 font-weight: bold;
+                font-size: 10px;
             }
             QPushButton:hover {
                 background-color: rgba(255, 120, 120, 255);
@@ -173,7 +195,7 @@ class PetWindow(QWidget):
 
         self.settings_button = self._create_button(
             "Settings",
-            (152, 200, 55, 30),
+            (144, 200, 66, 28),
             self.open_settings,
             """
             QPushButton {
@@ -181,6 +203,7 @@ class PetWindow(QWidget):
                 color: white;
                 border-radius: 10px;
                 font-weight: bold;
+                font-size: 10px;
             }
             QPushButton:hover {
                 background-color: rgba(120, 120, 255, 255);
@@ -241,7 +264,9 @@ class PetWindow(QWidget):
             print("Failed to load frame:", path)
             return
 
-        pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        target_width = self.width() if self.width() > 0 else 200
+        target_height = self.height() if self.height() > 0 else 200
+        pixmap = pixmap.scaled(target_width, target_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.label.setPixmap(pixmap)
 
     def _next_frame(self):
@@ -296,7 +321,9 @@ class PetWindow(QWidget):
                 if pm.isNull():
                     print("Failed to load frame:", p)
                     return
-                pm = pm.scaled(200, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                target_width = self.width() if self.width() > 0 else 200
+                target_height = self.height() if self.height() > 0 else 200
+                pm = pm.scaled(target_width, target_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 pixmaps.append(pm)
 
             self.current_frame_pixmaps = pixmaps
@@ -343,7 +370,9 @@ class PetWindow(QWidget):
             print("Failed to load image:", path)
             return
 
-        pixmap = pixmap.scaled(350, 350, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        target_width = self.width() if self.width() > 0 else 350
+        target_height = self.height() if self.height() > 0 else 350
+        pixmap = pixmap.scaled(target_width, target_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.label.setPixmap(pixmap)
 
     def load_character_asset(self, character_name=None):
