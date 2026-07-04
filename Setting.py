@@ -116,7 +116,7 @@ class SettingsApp(QWidget):
         layout.addLayout(self.quest_layout)
 
         self.refresh_quests_button = QPushButton("Refresh Quests")
-        self.refresh_quests_button.clicked.connect(self.load_quests)
+        self.refresh_quests_button.clicked.connect(self.refresh_daily_quests)
         layout.addWidget(self.refresh_quests_button)
 
         self.reset_data_button = QPushButton("Reset All Data")
@@ -398,6 +398,18 @@ class SettingsApp(QWidget):
         if not hasattr(self, "quest_system") or self.quest_system is None:
             self.quest_system = QuestSystem()
         return self.quest_system
+
+    def refresh_daily_quests(self):
+        quest_system = self._get_quest_system()
+        if quest_system is None:
+            return
+
+        if quest_system.refresh_daily_quests():
+            QMessageBox.information(self, "Quests", "Daily quests refreshed!")
+        else:
+            QMessageBox.information(self, "Quests", "No refresh attempts left today.")
+
+        self.load_quests()
 
     def reset_all_data(self):
         if not hasattr(self, "parent_window") or self.parent_window is None:
