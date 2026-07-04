@@ -252,7 +252,7 @@ class PetWindow(QWidget):
         self.timer_loop = TimerLoop(
             self.pet,
             callback=self.game_loop,
-            interval=200
+            interval=1000
         )
         self.timer_loop.start()
 
