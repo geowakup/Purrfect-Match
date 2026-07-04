@@ -34,6 +34,7 @@ class PetWindow(QWidget):
 
         self.pet = Pet()
         self.pet.save_callback = self.persist_pet_state
+        self.pet.advancement_callback = self.handle_advancement_progress
         self.save_system = SaveSystem()
         self.current_character = "firefly"
         self.characters = {
@@ -58,9 +59,11 @@ class PetWindow(QWidget):
         self.todo_window = None
         self.character_window = None
         self.advancement_manager = AdvancementsManager()
+        # ensure rewards can be delivered back to the main window
+        self.advancement_manager.reward_callback = self.reward_player_with_coins
         
         # Developer Mode
-        self.developer_mode = False
+        self.developer_mode = False 
 
         self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         self.ASSET_DIR = os.path.join(self.BASE_DIR, "assets", "images")
@@ -436,6 +439,30 @@ class PetWindow(QWidget):
         self.current_character = name
         self.current_asset_path = ""
         self.load_character_asset(name)
+        self.play_character_music(name)
+
+    def play_character_music(self, character_name):
+        if not hasattr(self, "bgm_player") or self.bgm_player is None:
+            return
+
+        track_map = {
+            "river_flow_to_you": "river flows to you.MP3",
+            "summer_ghost": "summer_ghost.MP3",
+        }
+
+        track_name = track_map.get(character_name)
+        if not track_name:
+            return
+
+        if self.bgm_player.load_track(track_name):
+            self.bgm_player.play()
+
+            if (
+                hasattr(self, "settings_window")
+                and self.settings_window is not None
+                and hasattr(self.settings_window, "update_bgm_status")
+            ):
+                self.settings_window.update_bgm_status()
 
 # -------------------------- Setting --------------------------------------
     def open_settings(self):
@@ -460,6 +487,17 @@ class PetWindow(QWidget):
     def persist_pet_state(self):
         if hasattr(self, "save_system") and self.save_system is not None and self.pet is not None:
             self.save_system.save_pet(self.pet, self.current_character)
+
+    def handle_advancement_progress(self, key):
+        if hasattr(self, "advancement_manager") and self.advancement_manager is not None:
+            self.advancement_manager.add_progress(key)
+
+    def reward_player_with_coins(self, amount):
+        if self.pet is not None:
+            self.pet.coins += amount
+            self.persist_pet_state()
+            if hasattr(self, "settings_window") and self.settings_window is not None:
+                self.settings_window.update_coin_label()
 
     def unlock_all_features(self):
         if not hasattr(self, "advancement_manager") or self.advancement_manager is None:
@@ -534,7 +572,7 @@ class PetWindow(QWidget):
 
         # ---------------- Achievement Progress ----------------
         if self.pet.hunger > 0:
-            self.advancement_manager.add_progress("alive_1_hour", 0.2)
+            self.advancement_manager.add_progress("play_for_1_hour", 0.2)
 
         # ---------------- Current Visual State ----------------
         self.load_character_asset()
@@ -560,6 +598,8 @@ class PetWindow(QWidget):
             if not self.dragging:
                 self.pet.action = random.choice(["happy", "jump", "petting", "roll"])
                 self.pet.action_timer = 200  # Keep animation looping
+                if hasattr(self, "advancement_manager") and self.advancement_manager is not None:
+                    self.advancement_manager.add_progress("click_pet")
                 # Reset inactivity timer on interaction
                 self.inactivity_timer.stop()
                 self.inactivity_timer.start(30000)
@@ -591,9 +631,11 @@ class PetWindow(QWidget):
 
         if hasattr(self, "advancement_manager") and self.advancement_manager is not None:
             try:
-                self.advancement_manager.clear_saved_state()
+                # persist advancement progress and synced feature flags
+                self.advancement_manager.save_data()
+                self.advancement_manager.sync_feature_unlocks()
             except Exception as exc:
-                print(f"Failed to clear advancement save on close: {exc}")
+                print(f"Failed to save advancement on close: {exc}")
 
         QApplication.quit()
         event.accept()

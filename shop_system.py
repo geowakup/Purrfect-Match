@@ -54,6 +54,12 @@ class ShopSystem:
             except Exception as exc:
                 print(f"Failed to save after purchase: {exc}")
 
+        if hasattr(pet, "advancement_callback") and pet.advancement_callback is not None:
+            try:
+                pet.advancement_callback("buy_food")
+            except Exception as exc:
+                print(f"Failed to update advancement after purchase: {exc}")
+
         return True, f"Bought {item_name} for {item['price']} coins!"
 
     # =========================

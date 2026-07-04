@@ -308,6 +308,17 @@ class SettingsApp(QWidget):
 
         QMessageBox.information(self,"Advancements",advancement_text)
 
+    # =========================
+    # Golden Finger Toggle
+    # =========================
+    def toggle_golden_finger(self):
+        self.golden_mode = not self.golden_mode
+
+        self.feed_button.setVisible(self.golden_mode)
+        self.play_button.setVisible(self.golden_mode)
+
+        print("Golden Finger:", self.golden_mode)
+
     def update_coin_label(self):
         coins = self.pet.coins if self.pet else 0
         self.coins_label.setText(f"Coins: {coins}")
@@ -342,6 +353,8 @@ class SettingsApp(QWidget):
             return
 
         success, message = self.shop_system.use_item(self.pet, item_name)
+        if success and hasattr(self.parent_window, "advancement_manager"):
+            self.parent_window.advancement_manager.add_progress("feed_pet")
         QMessageBox.information(self, "Inventory", message)
         self.update_coin_label()
         self.refresh_inventory()
@@ -383,17 +396,6 @@ class SettingsApp(QWidget):
         self.parent_window.change_character(name)
 
     # =========================
-    # Golden Finger Toggle
-    # =========================
-    def toggle_golden_finger(self):
-        self.golden_mode = not self.golden_mode
-
-        self.feed_button.setVisible(self.golden_mode)
-        self.play_button.setVisible(self.golden_mode)
-
-        print("Golden Finger:", self.golden_mode)
-
-    # =========================
     # Pet Functions
     # =========================
     def feed_pet(self):
@@ -401,14 +403,14 @@ class SettingsApp(QWidget):
             self.pet.hunger = min(100,self.pet.hunger + 20)
 
         self.parent_window.advancement_manager.add_progress(
-            "feed_10"
+            "feed_pet"
         )
         self.refresh_feature_access()
     def play_action(self):
         if self.pet:
             self.pet.trigger_random_action()
 
-            self.parent_window.advancement_manager.add_progress("play_20")
+            self.parent_window.advancement_manager.add_progress("click_pet")
             self.refresh_feature_access()
 
     # =========================
