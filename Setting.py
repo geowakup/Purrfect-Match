@@ -108,6 +108,7 @@ class SettingsApp(QWidget):
         layout.addWidget(self.coins_label)
 
         self.quest_title = QLabel("Daily Quests")
+        self.quest_title.setStyleSheet("font-weight: bold;")
         layout.addWidget(self.quest_title)
 
         self.quest_layout = QVBoxLayout()
@@ -115,8 +116,13 @@ class SettingsApp(QWidget):
         layout.addLayout(self.quest_layout)
 
         self.refresh_quests_button = QPushButton("Refresh Quests")
-        self.refresh_quests_button.clicked.connect(self.load_quests)
+        self.refresh_quests_button.clicked.connect(self.refresh_daily_quests)
         layout.addWidget(self.refresh_quests_button)
+
+        self.reset_data_button = QPushButton("Reset All Data")
+        self.reset_data_button.clicked.connect(self.reset_all_data)
+        self.reset_data_button.hide()
+        layout.addWidget(self.reset_data_button)
 
         self.quest_system = QuestSystem()
 
@@ -313,6 +319,7 @@ class SettingsApp(QWidget):
         self.states_label.setVisible(dev_unlocked and self.developer_mode)
         self.actions_label.setVisible(dev_unlocked and self.developer_mode)
         self.exit_dev_button.setVisible(dev_unlocked and self.developer_mode)
+        self.reset_data_button.setVisible(dev_unlocked and self.developer_mode)
 
         self.update_coin_label()
         self.refresh_inventory()
@@ -335,6 +342,14 @@ class SettingsApp(QWidget):
         print("Golden Finger:", self.golden_mode)
 
     def update_coin_label(self):
+        if self.pet is None:
+            self.coins_label.setText("Coins: 0")
+            return
+
+        if hasattr(self, "parent_window") and self.parent_window is not None and getattr(self.parent_window, "developer_mode", False):
+            self.coins_label.setText("Coins: ∞")
+            return
+
         coins = self.pet.coins if self.pet else 0
         self.coins_label.setText(f"Coins: {coins}")
 
@@ -374,11 +389,51 @@ class SettingsApp(QWidget):
         self.update_coin_label()
         self.refresh_inventory()
 
-    def load_quests(self):
-        if not hasattr(self, "quest_system"):
-            self.quest_system = QuestSystem()
+    def _get_quest_system(self):
+        if hasattr(self, "parent_window") and self.parent_window is not None:
+            quest_system = getattr(self.parent_window, "quest_system", None)
+            if quest_system is not None:
+                return quest_system
 
-        quests = self.quest_system.get_quests()
+        if not hasattr(self, "quest_system") or self.quest_system is None:
+            self.quest_system = QuestSystem()
+        return self.quest_system
+
+    def refresh_daily_quests(self):
+        quest_system = self._get_quest_system()
+        if quest_system is None:
+            return
+
+        if quest_system.refresh_daily_quests():
+            QMessageBox.information(self, "Quests", "Daily quests refreshed!")
+        else:
+            QMessageBox.information(self, "Quests", "No refresh attempts left today.")
+
+        self.load_quests()
+
+    def reset_all_data(self):
+        if not hasattr(self, "parent_window") or self.parent_window is None:
+            QMessageBox.warning(self, "Reset Data", "No game window is attached.")
+            return
+
+        reply = QMessageBox.question(
+            self,
+            "Reset All Data",
+            "This will erase all saved progress, coins, inventory, quests, and unlocks. Continue?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if reply != QMessageBox.Yes:
+            return
+
+        self.parent_window.reset_all_saves()
+        self.load_quests()
+        self.update_coin_label()
+        self.refresh_inventory()
+        self.refresh_feature_access()
+
+    def load_quests(self):
+        quest_system = self._get_quest_system()
+        quests = quest_system.get_quests()
 
         for label in self.quest_labels:
             self.quest_layout.removeWidget(label)
@@ -386,9 +441,24 @@ class SettingsApp(QWidget):
         self.quest_labels.clear()
 
         for quest in quests:
-            quest_text = f"{quest['progress']}/{quest['goal']} - {quest['name']}"
+            progress = quest.get("progress", 0)
+            goal = quest.get("goal", 1)
+            reward = quest.get("reward", 0)
+            completed = quest.get("completed", False)
+            status = "✅ Completed" if completed else "⏳ In Progress"
+            quest_text = (
+                f"{quest.get('name', 'Quest')}\n"
+                f"Progress: {progress}/{goal}  {status}\n"
+                f"Reward: {reward} coins"
+            )
             label = QLabel(quest_text)
             label.setWordWrap(True)
+            label.setStyleSheet(
+                "background-color: rgba(255,255,255,180);"
+                "border-radius: 6px;"
+                "padding: 6px;"
+                "margin-top: 2px;"
+            )
             self.quest_layout.addWidget(label)
             self.quest_labels.append(label)
 
@@ -415,18 +485,30 @@ class SettingsApp(QWidget):
     # =========================
     def feed_pet(self):
         if self.pet:
-            self.pet.hunger = min(100,self.pet.hunger + 20)
+            self.pet.hunger = min(100, self.pet.hunger + 20)
 
-        self.parent_window.advancement_manager.add_progress(
-            "feed_pet"
-        )
+        if hasattr(self.parent_window, "advancement_manager") and self.parent_window.advancement_manager is not None:
+            self.parent_window.advancement_manager.add_progress("feed_pet")
+
+        quest_system = self._get_quest_system()
+        if quest_system is not None:
+            quest_system.record_action("feed")
+
         self.refresh_feature_access()
+        self.load_quests()
+
     def play_action(self):
         if self.pet:
             self.pet.trigger_random_action()
 
+        if hasattr(self.parent_window, "advancement_manager") and self.parent_window.advancement_manager is not None:
             self.parent_window.advancement_manager.add_progress("click_pet")
-            self.refresh_feature_access()
+
+        quest_system = self._get_quest_system()
+        if quest_system is not None:
+            quest_system.record_action("click")
+
+        self.refresh_feature_access()
 
     # =========================
     # Volume Functions

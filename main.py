@@ -21,6 +21,7 @@ from Setting import SettingsApp
 from shop_system import ShopSystem
 from shop_window import ShopWindow
 from styles import load_theme
+from system.quest_system import QuestSystem
 from timer_loop import TimerLoop
 from shop_window import ShopWindow
 from inventory_window import InventoryWindow
@@ -38,6 +39,7 @@ class PetWindow(QWidget):
         self.pet = Pet()
         self.pet.save_callback = self.persist_pet_state
         self.pet.advancement_callback = self.handle_advancement_progress
+        self.pet.quest_callback = self.handle_quest_progress
         self.save_system = SaveSystem()
         self.current_character = "firefly"
         self.characters = {
@@ -51,6 +53,7 @@ class PetWindow(QWidget):
         self.current_frame_paths = []
         self.current_frame_index = 0
         self.frame_timer = None
+        self.dev_mode_coin_backup = None
         self.movie = None
         self.current_frame_pixmaps = []
         self.drag_pos = None
@@ -62,8 +65,11 @@ class PetWindow(QWidget):
         self.todo_window = None
         self.character_window = None
         self.advancement_manager = AdvancementsManager()
+        self.quest_system = QuestSystem()
+        self.quest_system.record_app_open()
         # ensure rewards can be delivered back to the main window
         self.advancement_manager.reward_callback = self.reward_player_with_coins
+        self.quest_system.reward_callback = self.reward_player_with_coins
         
         # Developer Mode
         self.developer_mode = False 
@@ -518,6 +524,8 @@ class PetWindow(QWidget):
         self.settings_window.activateWindow()
 
     def persist_pet_state(self):
+        if self.developer_mode:
+            return
         if hasattr(self, "save_system") and self.save_system is not None and self.pet is not None:
             self.save_system.save_pet(self.pet, self.current_character)
 
@@ -525,9 +533,21 @@ class PetWindow(QWidget):
         if hasattr(self, "advancement_manager") and self.advancement_manager is not None:
             self.advancement_manager.add_progress(key)
 
+    def handle_quest_progress(self, action_name):
+        if hasattr(self, "quest_system") and self.quest_system is not None:
+            self.quest_system.record_action(action_name)
+            if hasattr(self, "settings_window") and self.settings_window is not None:
+                try:
+                    self.settings_window.load_quests()
+                except Exception:
+                    pass
+
     def reward_player_with_coins(self, amount):
         if self.pet is not None:
-            self.pet.coins += amount
+            if self.developer_mode:
+                self.pet.coins = 10**9
+            else:
+                self.pet.coins += amount
             self.persist_pet_state()
             if hasattr(self, "settings_window") and self.settings_window is not None:
                 self.settings_window.update_coin_label()
@@ -634,6 +654,9 @@ class PetWindow(QWidget):
                 self.pet.action_timer = 200  # Keep animation looping
                 if hasattr(self, "advancement_manager") and self.advancement_manager is not None:
                     self.advancement_manager.add_progress("click_pet")
+                if hasattr(self, "quest_system") and self.quest_system is not None:
+                    self.quest_system.record_action("click")
+                    self.settings_window.load_quests() if self.settings_window is not None and self.settings_window.isVisible() else None
                 # Reset inactivity timer on interaction
                 self.inactivity_timer.stop()
                 self.inactivity_timer.start(30000)
@@ -675,7 +698,7 @@ class PetWindow(QWidget):
         event.accept()
 
     def reset_all_saves(self):
-        """Delete all save files in the data folder and reset advancements to defaults."""
+        """Delete all save files in the data folder and reset the pet, quests, and advancements to defaults."""
         try:
             base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
             targets = [
@@ -693,7 +716,6 @@ class PetWindow(QWidget):
                     except OSError:
                         pass
 
-            # Also try legacy save at repository root
             legacy = os.path.join(os.path.dirname(os.path.abspath(__file__)), "save_data.json")
             if os.path.exists(legacy):
                 try:
@@ -701,29 +723,33 @@ class PetWindow(QWidget):
                 except OSError:
                     pass
 
-            # Reset in-memory advancement manager to defaults and persist
-            if hasattr(self, "advancement_manager") and self.advancement_manager is not None:
-                defaults = self.advancement_manager._build_default_advancements()
-                self.advancement_manager.advancements = defaults
-                self.advancement_manager._sync_advancement_list()
-                self.advancement_manager.sync_feature_unlocks()
-                self.advancement_manager.save_data()
+            self.advancement_manager = AdvancementsManager()
+            self.advancement_manager.reward_callback = self.reward_player_with_coins
 
-            # Reset pet save via SaveSystem
-            if hasattr(self, "save_system") and self.save_system is not None:
-                try:
-                    if os.path.exists(self.save_system.filename):
-                        os.remove(self.save_system.filename)
-                except OSError:
-                    pass
+            self.quest_system = QuestSystem()
+            self.quest_system.reward_callback = self.reward_player_with_coins
+            self.quest_system.record_app_open()
 
-            # Refresh UI state if settings window open
+            self.pet = Pet()
+            self.pet.save_callback = self.persist_pet_state
+            self.pet.advancement_callback = self.handle_advancement_progress
+            self.pet.quest_callback = self.handle_quest_progress
+            self.pet.coins = 100
+            self.persist_pet_state()
+
+            self.current_character = "firefly"
+            self.current_asset_path = ""
+            self.load_character_asset(self.current_character)
+
             if hasattr(self, "settings_window") and self.settings_window is not None:
+                self.settings_window.pet = self.pet
+                self.settings_window.parent_window = self
                 self.settings_window.refresh_feature_access()
                 self.settings_window.update_coin_label()
                 self.settings_window.refresh_inventory()
+                self.settings_window.load_quests()
 
-            print("All save data cleared and advancements reset to defaults.")
+            print("All save data cleared and game state reset to defaults.")
         except Exception as exc:
             print(f"Failed to reset saves: {exc}")
     
@@ -731,8 +757,12 @@ class PetWindow(QWidget):
     # Developer Mode Methods
     # =========================
     def enter_developer_mode(self):
-        """Enter developer mode - stops normal game loop updates"""
+        """Enter developer mode - stops normal game loop updates and grants unlimited coins."""
         self.developer_mode = True
+        if self.pet is not None and self.dev_mode_coin_backup is None:
+            self.dev_mode_coin_backup = self.pet.coins
+        if self.pet is not None:
+            self.pet.coins = 10**9
         print("Developer Mode: ENABLED - All normal game updates paused")
         # Stop normal update timers and freeze pet stats
         self.inactivity_timer.stop()
@@ -742,10 +772,18 @@ class PetWindow(QWidget):
         self.pet.hunger = max(0, self.pet.hunger)
         self.pet.happiness = max(0, self.pet.happiness)
         self.pet.action_timer = 9999
+        if hasattr(self, "settings_window") and self.settings_window is not None:
+            self.settings_window.update_coin_label()
     
     def exit_developer_mode(self):
-        """Exit developer mode - resume normal game loop"""
+        """Exit developer mode - resume normal game loop and restore the original coin balance."""
         self.developer_mode = False
+        if self.pet is not None:
+            if self.dev_mode_coin_backup is not None:
+                self.pet.coins = self.dev_mode_coin_backup
+                self.dev_mode_coin_backup = None
+            else:
+                self.pet.coins = max(0, self.pet.coins)
         print("Developer Mode: DISABLED - Resuming normal gameplay")
         # Reset developer mode overrides so pet stats can resume updating
         self.pet.action = None
@@ -758,6 +796,9 @@ class PetWindow(QWidget):
         self.inactivity_timer.start(30000)
         if self.timer_loop is not None:
             self.timer_loop.start()
+        self.persist_pet_state()
+        if hasattr(self, "settings_window") and self.settings_window is not None:
+            self.settings_window.update_coin_label()
 # =========================
 # MAIN APP
 # =========================

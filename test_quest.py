@@ -1,18 +1,5 @@
-from system.quests_manager import QuestManager
+from test_daily_quests import run_quest_demo
 
-quest_manager = QuestManager()
 
-quest_manager.generate_daily_quests()
-
-quests = quest_manager.get_quests()
-
-print("\n=== DAILY QUESTS ===")
-
-for quest in quests:
-
-    print(f"Quest: {quest['title']}")
-    print(f"Goal: {quest['goal']}")
-    print(f"Reward: {quest['reward']}")
-    print(f"Progress: {quest['progress']}")
-    print(f"Completed: {quest['completed']}")
-    print("----------------------")
+if __name__ == "__main__":
+    run_quest_demo()
