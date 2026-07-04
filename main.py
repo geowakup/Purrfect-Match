@@ -639,6 +639,59 @@ class PetWindow(QWidget):
 
         QApplication.quit()
         event.accept()
+
+    def reset_all_saves(self):
+        """Delete all save files in the data folder and reset advancements to defaults."""
+        try:
+            base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+            targets = [
+                os.path.join(base, "save_data.json"),
+                os.path.join(base, "advancement.json"),
+                os.path.join(base, "pet.json"),
+                os.path.join(base, "quests.json"),
+                os.path.join(base, "stats.json"),
+                os.path.join(base, "tasks.json"),
+            ]
+            for path in targets:
+                if os.path.exists(path):
+                    try:
+                        os.remove(path)
+                    except OSError:
+                        pass
+
+            # Also try legacy save at repository root
+            legacy = os.path.join(os.path.dirname(os.path.abspath(__file__)), "save_data.json")
+            if os.path.exists(legacy):
+                try:
+                    os.remove(legacy)
+                except OSError:
+                    pass
+
+            # Reset in-memory advancement manager to defaults and persist
+            if hasattr(self, "advancement_manager") and self.advancement_manager is not None:
+                defaults = self.advancement_manager._build_default_advancements()
+                self.advancement_manager.advancements = defaults
+                self.advancement_manager._sync_advancement_list()
+                self.advancement_manager.sync_feature_unlocks()
+                self.advancement_manager.save_data()
+
+            # Reset pet save via SaveSystem
+            if hasattr(self, "save_system") and self.save_system is not None:
+                try:
+                    if os.path.exists(self.save_system.filename):
+                        os.remove(self.save_system.filename)
+                except OSError:
+                    pass
+
+            # Refresh UI state if settings window open
+            if hasattr(self, "settings_window") and self.settings_window is not None:
+                self.settings_window.refresh_feature_access()
+                self.settings_window.update_coin_label()
+                self.settings_window.refresh_inventory()
+
+            print("All save data cleared and advancements reset to defaults.")
+        except Exception as exc:
+            print(f"Failed to reset saves: {exc}")
     
     # =========================
     # Developer Mode Methods
