@@ -1,9 +1,9 @@
-from database import Database
+from system.database import Database 
 
 class PetSystem:
     def __init__(self):
         self.db = Database()
-        self.filename = "pet.json"
+        self.filename = "pet"
 
     # -------------------
     # GET PET DATA
@@ -53,4 +53,4 @@ class PetSystem:
         if pet["happiness"] < 0:
             pet["happiness"] = 0
 
-        self.save_pet(pet)
+        self.save_pet(pet)                          
