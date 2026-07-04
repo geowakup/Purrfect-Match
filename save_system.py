@@ -26,8 +26,8 @@ class SaveSystem:
             "name": pet.name,
             "hunger": pet.hunger,
             "happiness": pet.happiness,
-            "energy": pet.energy,
-            "cleanliness": pet.cleanliness,
+            "energy": getattr(pet, "energy", 100),
+            "cleanliness": getattr(pet, "cleanliness", 100),
 
             "state": pet.state,
             "action": pet.action,
@@ -96,12 +96,17 @@ class SaveSystem:
         pet.hunger = data.get("hunger", 100)
         pet.happiness = data.get("happiness", 100)
 
-        pet.energy = data.get("energy", 100)
+        if pet.hunger <= 0:
+            pet.hunger = 20
 
-        pet.cleanliness = data.get(
-            "cleanliness",
-            100
-        )
+        if pet.happiness <= 0:
+            pet.happiness = 20
+
+        if hasattr(pet, "energy"):
+            pet.energy = data.get("energy", 100)
+
+        if hasattr(pet, "cleanliness"):
+            pet.cleanliness = data.get("cleanliness", 100)
 
         pet.state = data.get(
             "state",

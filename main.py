@@ -3,9 +3,8 @@ import sys
 import random
 
 from PySide6.QtCore import Qt, QPropertyAnimation, QTimer, QSize
-from PySide6.QtGui import QMovie, QCursor, QPixmap
-from shop_system import ShopSystem 
-from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QWidget
+from PySide6.QtGui import QMovie, QCursor, QPixmap, QShortcut, QKeySequence
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QWidget, QMessageBox
 
 from CharacterSelect import CharacterSelectApp
 from advancement import AdvancementsManager
@@ -14,11 +13,16 @@ from cat import CatCharacter
 from decoration import add_glow
 from dog import DogCharacter
 from firefly import FireflyCharacter
+from inventory_window import InventoryWindow
 from pet import Pet
 from pet_lifecycle import PetLifecycle
 from save_system import SaveSystem
-from timer_loop import TimerLoop
+from Setting import SettingsApp
+from shop_system import ShopSystem
+from shop_window import ShopWindow
 from styles import load_theme
+from timer_loop import TimerLoop
+from Todo import TodoApp
 
 
 # =========================
@@ -29,12 +33,15 @@ class PetWindow(QWidget):
         super().__init__()
 
         self.pet = Pet()
+        self.pet.save_callback = self.persist_pet_state
         self.save_system = SaveSystem()
         self.current_character = "firefly"
         self.characters = {
             "firefly": FireflyCharacter(),
             "cat": CatCharacter(),
-            "dog": DogCharacter()
+            "dog": DogCharacter(),
+            "river_flow_to_you": FireflyCharacter(),
+            "summer_ghost": FireflyCharacter()
         }
         self.current_asset_path = ""
         self.current_frame_paths = []
@@ -68,9 +75,13 @@ class PetWindow(QWidget):
         self.pet.state = "idle"
         self.pet.action = None
 
-        self._setup_window()self.shop_window = None
+        self._setup_window()
+        self.shop_window = None
         self.inventory_window = None
         self._setup_label()
+
+        self.unlock_shortcut = QShortcut(QKeySequence("Ctrl+Shift+D"), self)
+        self.unlock_shortcut.activated.connect(self.unlock_all_features)
         self._setup_buttons()
         self._setup_timers()
 
@@ -171,61 +182,6 @@ class PetWindow(QWidget):
         )
         add_glow(self.settings_button, "#7aa2ff")
 
-# ---------------------------- Shop Button ----------------------------
-        self.shop_button = QPushButton("Shop", self)
-
-        self.shop_button.setGeometry(78, 160, 70, 30)
-
-        self.shop_button.clicked.connect(
-            self.open_shop
-        )
-
-        self.shop_button.setStyleSheet("""
-        QPushButton {
-            background-color: rgba(255,180,0,220);
-            color:white;
-            border-radius:10px;
-            font-weight:bold;
-        }
-
-        QPushButton:hover {
-            background-color: rgba(255,210,80,255);
-        }
-        """)
-
-        add_glow(self.shop_button, "#ffb24d")
-
-        self.shop_button.hide()
-
-# ---------------------------- Inventory Button ----------------------------
-        self.inventory_button = QPushButton(
-            "Inventory",
-            self
-        )
-
-        self.inventory_button.setGeometry(60, 110, 100, 30)
-
-        self.inventory_button.clicked.connect(
-            self.open_inventory
-        )
-
-        self.inventory_button.setStyleSheet("""
-        QPushButton{
-        background-color: rgba(140,100,255,220);
-        color:white;
-        border-radius:10px;
-        font-weight:bold;
-        }
-
-        QPushButton:hover{
-        background-color: rgba(180,150,255,255);
-        }
-        """)
-
-        add_glow(self.inventory_button, "#aa88ff")
-
-        self.inventory_button.hide()
-
     def _setup_timers(self):
         self.hover_timer = QTimer()
         self.hover_timer.timeout.connect(self.check_hover)
@@ -237,9 +193,6 @@ class PetWindow(QWidget):
         self.inactivity_timer = QTimer()
         self.inactivity_timer.timeout.connect(self.trigger_sleep)
         self.inactivity_timer.start(30000)  # 30 seconds
-
-        self.anim = QPropertyAnimation(self.todo_button, b"windowOpacity")
-        self.anim.setDuration(150)
 
         self.hide_timer = QTimer(self)
         self.hide_timer.setSingleShot(True)
@@ -285,12 +238,26 @@ class PetWindow(QWidget):
         self.label.setPixmap(pixmap)
 
     def _next_frame(self):
+        """Advance through the current animation sequence and stop after the final frame."""
         if not self.current_frame_paths:
             return
 
-        old = self.current_frame_index
-        self.current_frame_index = (self.current_frame_index + 1) % len(self.current_frame_paths)
-        print(f"Frame tick: {old} -> {self.current_frame_index}")
+        if not self.frame_timer or not self.frame_timer.isActive():
+            self.frame_timer = QTimer(self)
+            self.frame_timer.timeout.connect(self._next_frame)
+            self.frame_timer.setInterval(250)  # 250ms per frame
+            self.frame_timer.start()
+            return
+
+        next_index = self.current_frame_index + 1
+        if next_index >= len(self.current_frame_paths):
+            self._show_frame(self.current_frame_index)
+            self._stop_frame_animation()
+            print(f"Animation finished for state {self.pet.action or self.pet.state}")
+            return
+
+        self.current_frame_index = next_index
+        print(f"Frame {self.current_frame_index + 1}/{len(self.current_frame_paths)}: {self.current_frame_paths[self.current_frame_index]}")
         self._show_frame(self.current_frame_index)
 
     def set_character_image(self, filename):
@@ -327,11 +294,11 @@ class PetWindow(QWidget):
 
             self.current_frame_pixmaps = pixmaps
             self._show_frame(0)
-
+            print(f"Initial: showing frame index 0: {paths[0]}")
             print(f"Starting frame animation: {len(paths)} frames for state {self.pet.action or self.pet.state}")
             self.frame_timer = QTimer(self)
             self.frame_timer.timeout.connect(self._next_frame)
-            self.frame_timer.setInterval(250)
+            self.frame_timer.setInterval(250)  # 250ms per frame
             self.frame_timer.start()
             print("Frame timer started")
             return
@@ -388,59 +355,55 @@ class PetWindow(QWidget):
         else:
             asset_key = os.path.join(self.ASSET_DIR, filename)
 
-        # Update the displayed asset when the asset key changes
-        # or when the visual state (action/state) changes so animations restart.
-        if self.current_asset_path != asset_key or self._last_visual_state != state:
+        # Only switch visuals once the current animation cycle has fully finished.
+        # This makes all states wait for the full four-frame loop before the next state starts.
+        is_animation_playing = (
+            self.frame_timer is not None
+            and self.frame_timer.isActive()
+        )
+
+        should_restart = False
+
+        if self.current_asset_path != asset_key:
+            if not is_animation_playing:
+                should_restart = True
+        elif not is_animation_playing and self._last_visual_state != state:
+            should_restart = True
+
+        if should_restart:
+            print(f"Starting animation for state {state}")
             self.set_character_image(filename)
             self._last_visual_state = state
-        else:
-            # Restart frame timer if animation asset is already loaded but timer stopped
-            if isinstance(filename, (list, tuple)) and (
-                self.frame_timer is None or not self.frame_timer.isActive()
-            ):
-                self.set_character_image(filename)
-                self._last_visual_state = state
 
 # ------------------------- Hide Button Function ------------------------
     def hide_button(self):
-        try:
-            self.anim.finished.disconnect()
-        except:
-            pass
+        if not self.todo_button.isVisible():
+            return
 
-        self.anim.stop()
-        self.anim.setStartValue(self.todo_button.windowOpacity())
-        self.anim.setEndValue(0)
-
-        self.anim.finished.connect(self.todo_button.hide)
-        self.anim.finished.connect(self.settings_button.hide)
-        self.anim.finished.connect(self.character_button.hide)
-        self.anim.finished.connect(self.shop_button.hide)
-        self.anim.finished.connect(self.inventory_button.hide)   
-        self.anim.start()
+        self.todo_button.hide()
+        self.settings_button.hide()
+        self.character_button.hide()
 
 # ------------------------ Check and trigger ------------------------
     def check_hover(self):
         local_pos = self.mapFromGlobal(QCursor.pos())
-        hovered = self.label.geometry().contains(local_pos)
+        hovered = (
+            self.label.geometry().contains(local_pos)
+            or self.character_button.geometry().contains(local_pos)
+            or self.todo_button.geometry().contains(local_pos)
+            or self.settings_button.geometry().contains(local_pos)
+        )
 
-        if hovered and not self.todo_button.isVisible() :
-            self.todo_button.show()
-            self.settings_button.show()
-            self.character_button.show()
-            self.shop_button.show()
-            self.inventory_button.show()
-
-            self.anim.stop()
-            self.anim.setStartValue(self.todo_button.windowOpacity())
-            self.anim.setEndValue(1)
-            self.anim.start()
-        
         if hovered:
-            self.hide_timer.start(10000)
-        else:
-            if self.todo_button.isVisible() and not self.hide_timer.isActive():
-                self.hide_timer.start(10000)
+            self.hide_timer.stop()
+            if not self.todo_button.isVisible():
+                self.todo_button.show()
+                self.settings_button.show()
+                self.character_button.show()
+            return
+
+        if self.todo_button.isVisible() and not self.hide_timer.isActive():
+            self.hide_timer.start(5000)
 
 # ------------------------ Open To-Do Window ------------------------
     def open_todo(self):
@@ -466,52 +429,8 @@ class PetWindow(QWidget):
         self.character_window.activateWindow()
 
 # ------------------------
-# Open Shop Window
-# ------------------------
-    def open_shop(self):
-
-        if self.shop_window is None or not self.shop_window.isVisible():
-
-            self.shop_window = ShopWindow(self.pet)
-
-            self.shop_window.setWindowFlag(
-                Qt.WindowStaysOnTopHint,
-                True
-            )
-
-        self.shop_window.show()
-        self.shop_window.raise_()
-        self.shop_window.activateWindow()
-
-# ------------------------
 # Open Inventory Window
 # ------------------------
-    def open_inventory(self):
-
-        if (
-            self.inventory_window is None
-            or not self.inventory_window.isVisible()
-        ):
-
-            self.inventory_window = (
-                InventoryWindow(
-                    self.pet
-                )
-            )
-
-            self.inventory_window.setWindowFlag(
-                Qt.WindowStaysOnTopHint,
-                True
-            )
-
-        self.inventory_window.refresh()
-
-        self.inventory_window.show()
-
-        self.inventory_window.raise_()
-
-        self.inventory_window.activateWindow()
-
 #------------------------ Change Character (called from character select) ------------------------
     def change_character(self, name):
         self.current_character = name
@@ -538,33 +457,72 @@ class PetWindow(QWidget):
         self.settings_window.raise_()
         self.settings_window.activateWindow()
 
+    def persist_pet_state(self):
+        if hasattr(self, "save_system") and self.save_system is not None and self.pet is not None:
+            self.save_system.save_pet(self.pet, self.current_character)
+
+    def unlock_all_features(self):
+        if not hasattr(self, "advancement_manager") or self.advancement_manager is None:
+            return
+
+        manager = self.advancement_manager
+
+        for feature_name in [
+            "dark_theme",
+            "cyber_theme",
+            "bgm",
+            "developer_mode",
+            "river_flow",
+            "summer_ghost",
+        ]:
+            manager.feature_unlocks[feature_name] = True
+
+        for advancement in manager.advancements.values():
+            advancement["unlocked"] = True
+
+        manager.save_data()
+        manager.sync_feature_unlocks()
+
+        if self.settings_window is not None:
+            self.settings_window.refresh_feature_access()
+            self.settings_window.update_coin_label()
+            self.settings_window.refresh_inventory()
+            if hasattr(self.settings_window, "update_bgm_status"):
+                self.settings_window.update_bgm_status()
+            if hasattr(self.settings_window, "populate_bgm_tracks"):
+                self.settings_window.populate_bgm_tracks()
+
+        if hasattr(self, "settings_window") and self.settings_window is not None:
+            self.settings_window.developer_mode = True
+            self.settings_window.show_dev_controls()
+            self.settings_window.dev_mode_toggle.setChecked(True)
+            self.settings_window.dev_mode_toggle.setText("Disable Developer Mode")
+
+        if hasattr(self, "enter_developer_mode"):
+            self.enter_developer_mode()
+
+        QMessageBox.information(self, "Unlock All", "All features and developer tools have been unlocked.")
+
 # ------------------------Game Loop: Update Pet State + Change GIF------------------------
     def game_loop(self):
         # If in developer mode, skip normal game updates
         if self.developer_mode:
             # Keep action running continuously for smooth looping
             if self.pet.action is not None:
-                self.pet.action_timer = 100  # Keep action active indefinitely
+                self.pet.action_timer = 200  # Keep action active indefinitely
             # Just update the visual state to reflect current pet state/action
             self.load_character_asset()
             return
 
         # Normal gameplay loop (disabled in developer mode)
-        # Keep action timers high for smooth continuous 4-frame animation
+        # Use EXACT same action maintenance as developer mode
         if self.pet.action is not None:
-            self.pet.action_timer = max(self.pet.action_timer, 50)  # Maintain smooth animation
+            self.pet.action_timer = 200  # Keep action running indefinitely (same as dev mode)
         
-        # ---------------- Petting ----------------
+        # Keep holding down for petting action
         if self.is_holding and self.pet.hunger > 0:
             self.pet.action = "petting"
-            self.pet.action_timer = 50  # Smooth continuous petting animation
-        elif self.pet.action == "petting":
-            # Keep petting action running smoothly
-            self.pet.action_timer = max(self.pet.action_timer, 50)
-
-        # Keep random action animations running smoothly
-        if self.pet.action in ["jump", "roll", "happy", "sleep"]:
-            self.pet.action_timer = max(self.pet.action_timer, 50)
+            self.pet.action_timer = 200
 
         # ---------------- Idle Behavior ----------------
         self.lifecycle.idle_behavior()
@@ -586,7 +544,7 @@ class PetWindow(QWidget):
         """Trigger sleep state if no interaction for 30 seconds"""
         if self.pet.action is None and self.pet.state != "sleep":
             self.pet.action = "sleep"
-            self.pet.action_timer = 50  # Increased for smooth looping
+            self.pet.action_timer = 200  # Keep animation looping
 
 # ------------------------Drag Window + Close App------------------------
     def mousePressEvent(self, event):
@@ -601,7 +559,7 @@ class PetWindow(QWidget):
             # If it wasn't a drag, trigger a random action
             if not self.dragging:
                 self.pet.action = random.choice(["happy", "jump", "petting", "roll"])
-                self.pet.action_timer = 50  # Increased for smooth looping
+                self.pet.action_timer = 200  # Keep animation looping
                 # Reset inactivity timer on interaction
                 self.inactivity_timer.stop()
                 self.inactivity_timer.start(30000)
@@ -626,7 +584,18 @@ class PetWindow(QWidget):
         if self.todo_window is not None:
             self.todo_window.close()
 
-        QApplication.quit()   
+        try:
+            self.persist_pet_state()
+        except Exception as exc:
+            print(f"Failed to save pet on close: {exc}")
+
+        if hasattr(self, "advancement_manager") and self.advancement_manager is not None:
+            try:
+                self.advancement_manager.clear_saved_state()
+            except Exception as exc:
+                print(f"Failed to clear advancement save on close: {exc}")
+
+        QApplication.quit()
         event.accept()
     
     # =========================
@@ -642,9 +611,7 @@ class PetWindow(QWidget):
             self.timer_loop.stop()
         self.pet.alive = True
         self.pet.hunger = max(0, self.pet.hunger)
-        self.pet.energy = max(0, self.pet.energy)
         self.pet.happiness = max(0, self.pet.happiness)
-        self.pet.cleanliness = max(0, self.pet.cleanliness)
         self.pet.action_timer = 9999
     
     def exit_developer_mode(self):

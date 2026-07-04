@@ -48,6 +48,12 @@ class ShopSystem:
         pet.coins -= item["price"]
         pet.inventory.append(item_name)
 
+        if getattr(pet, "save_callback", None) is not None:
+            try:
+                pet.save_callback()
+            except Exception as exc:
+                print(f"Failed to save after purchase: {exc}")
+
         return True, f"Bought {item_name} for {item['price']} coins!"
 
     # =========================
@@ -75,5 +81,11 @@ class ShopSystem:
 
         # Remove used item
         pet.inventory.remove(item_name)
+
+        if getattr(pet, "save_callback", None) is not None:
+            try:
+                pet.save_callback()
+            except Exception as exc:
+                print(f"Failed to save after use: {exc}")
 
         return True, f"Used {item_name}!"

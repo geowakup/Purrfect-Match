@@ -7,8 +7,6 @@ class Pet:
         self.name = name
         self.hunger = 50
         self.happiness = 50
-        self.energy = 50
-        self.cleanliness = 50
 
         # GUI state system
         self.state = "happy"
@@ -17,6 +15,7 @@ class Pet:
 
         self.coins = 100
         self.inventory = []
+        self.save_callback = None
 
         self.alive = True
         self.age = 0
@@ -32,14 +31,10 @@ class Pet:
             return
 
         # Mood priority system
-        if self.hunger < 40:
+        if self.hunger < 20:
             self.state = "starving"
-        elif self.hunger <= 60:
+        elif self.hunger <= 40:
             self.state = "hungry"
-        elif self.energy <= 20:
-            self.state = "sleepy"
-        elif self.cleanliness <= 20:
-            self.state = "dirty"
         elif self.happiness <= 30:
             self.state = "sad"
         else:
@@ -50,7 +45,7 @@ class Pet:
     # -------------------------
     def trigger_random_action(self):
         self.action = random.choice(["jump", "roll", "sleep"])
-        self.action_timer = 10
+        self.action_timer = 200
 
     # -------------------------
     # INTERACTIONS
@@ -61,15 +56,6 @@ class Pet:
 
     def play(self):
         self.happiness = min(100, self.happiness + 10)
-        self.energy = max(0, self.energy - 5)
-        self.update_state()
-
-    def rest(self):
-        self.energy = min(100, self.energy + 15)
-        self.update_state()
-
-    def clean(self):
-        self.cleanliness = min(100, self.cleanliness + 20)
         self.update_state()
 
     # -------------------------
@@ -79,14 +65,9 @@ class Pet:
 
         print("Pet update running")
 
-        # Decay stats
-        self.hunger = max(0, self.hunger - 1)
-        self.energy = max(0, self.energy - 1)
-        self.cleanliness = max(0, self.cleanliness - 1)
-
-        # Happiness decay
-        if self.hunger <= 30 or self.energy <= 30:
-            self.happiness = max(0, self.happiness - 1)
+        # Decay stats - same rate for both hunger and happiness
+        self.hunger = max(0, self.hunger - 0.005)
+        self.happiness = max(0, self.happiness - 0.005)
 
         # Action timer (don't decrement in developer mode - indicated by high value)
         if self.action_timer < 1000:  # Only decrement normal timers, not developer mode
@@ -105,8 +86,6 @@ class Pet:
             "name": self.name,
             "hunger": self.hunger,
             "happiness": self.happiness,
-            "energy": self.energy,
-            "cleanliness": self.cleanliness,
             "state": self.state,
             "action": self.action,
             "coin": self.coins,

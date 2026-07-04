@@ -16,8 +16,6 @@ class PetLifecycle:
 
         self.pet.hunger = 100
         self.pet.happiness = 100
-        self.pet.energy = 100
-        self.pet.cleanliness = 100
 
         self.pet.alive = True
         self.pet.age = 0
@@ -47,10 +45,7 @@ class PetLifecycle:
     # =========================
     def check_death(self):
 
-        if (
-            self.pet.hunger <= 0
-            and self.pet.energy <= 0
-        ):
+        if self.pet.hunger <= 0:
 
             self.pet.alive = False
             self.pet.state = "dead"

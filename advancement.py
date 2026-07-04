@@ -98,6 +98,26 @@ class AdvancementsManager:
         # First launch unlock
         self.unlock("first_launch")
 
+    def sync_feature_unlocks(self):
+        self.feature_unlocks = {
+            "dark_theme": False,
+            "cyber_theme": False,
+            "bgm": False,
+            "developer_mode": False,
+            "river_flow": False,
+            "summer_ghost": False,
+        }
+
+        for key, advancement in self.advancements.items():
+            if not advancement.get("unlocked", False):
+                continue
+
+            for feature in advancement.get("features", []):
+                self.feature_unlocks[feature] = True
+
+    def has_feature_unlocked(self, feature_name):
+        return self.feature_unlocks.get(feature_name, False)
+
     # ------------------------
     # Unlock Achievement
     # ------------------------
@@ -153,6 +173,14 @@ class AdvancementsManager:
         if os.path.exists(self.save_file):
             with open(self.save_file, "r") as file:
                 self.advancements = json.load(file)
+
+    def clear_saved_state(self):
+        for path in [self.save_file, self.legacy_save_file]:
+            if os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
 
     # ------------------------
     # Get List

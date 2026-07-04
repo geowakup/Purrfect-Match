@@ -71,6 +71,39 @@ class SettingsApp(QWidget):
 
         self.shop_system = ShopSystem()
 
+        self.inventory_panel = QWidget(self)
+        self.inventory_panel.setStyleSheet("""
+        QWidget {
+            background-color: rgba(140, 100, 255, 220);
+            color: white;
+            border-radius: 10px;
+            padding: 6px;
+        }
+        QPushButton {
+            background-color: rgba(255, 255, 255, 220);
+            color: #4b2b8f;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background-color: rgba(255, 255, 255, 255);
+        }
+        """)
+
+        self.inventory_panel_layout = QVBoxLayout(self.inventory_panel)
+        self.inventory_panel_layout.setContentsMargins(8, 8, 8, 8)
+        self.inventory_panel_layout.setSpacing(6)
+
+        self.inventory_label = QLabel("Inventory")
+        self.inventory_label.setStyleSheet("font-weight: bold; color: white;")
+        self.inventory_panel_layout.addWidget(self.inventory_label)
+
+        self.inventory_layout = QVBoxLayout()
+        self.inventory_layout.setSpacing(4)
+        self.inventory_panel_layout.addLayout(self.inventory_layout)
+        self.inventory_widgets = []
+        layout.addWidget(self.inventory_panel)
+
         self.coins_label = QLabel("Coins: 0")
         layout.addWidget(self.coins_label)
 
@@ -267,6 +300,7 @@ class SettingsApp(QWidget):
         self.exit_dev_button.setVisible(dev_unlocked and self.developer_mode)
 
         self.update_coin_label()
+        self.refresh_inventory()
     # Advancement Window
     # =========================
     def show_advancements(self):
@@ -277,6 +311,40 @@ class SettingsApp(QWidget):
     def update_coin_label(self):
         coins = self.pet.coins if self.pet else 0
         self.coins_label.setText(f"Coins: {coins}")
+
+    def refresh_inventory(self):
+        for widget in self.inventory_widgets:
+            self.inventory_layout.removeWidget(widget)
+            widget.deleteLater()
+        self.inventory_widgets.clear()
+
+        if self.pet is None:
+            empty_label = QLabel("No pet data")
+            self.inventory_layout.addWidget(empty_label)
+            self.inventory_widgets.append(empty_label)
+            return
+
+        if not self.pet.inventory:
+            empty_label = QLabel("Inventory empty")
+            self.inventory_layout.addWidget(empty_label)
+            self.inventory_widgets.append(empty_label)
+            return
+
+        for item_name in self.pet.inventory:
+            item_button = QPushButton(f"Use {item_name}")
+            item_button.clicked.connect(lambda checked=False, name=item_name: self.use_inventory_item(name))
+            self.inventory_layout.addWidget(item_button)
+            self.inventory_widgets.append(item_button)
+
+    def use_inventory_item(self, item_name):
+        if self.pet is None:
+            QMessageBox.warning(self, "Inventory", "Pet data not available.")
+            return
+
+        success, message = self.shop_system.use_item(self.pet, item_name)
+        QMessageBox.information(self, "Inventory", message)
+        self.update_coin_label()
+        self.refresh_inventory()
 
     def load_quests(self):
         if not hasattr(self, "quest_system"):
@@ -526,6 +594,7 @@ class SettingsApp(QWidget):
         if success:
             QMessageBox.information(self, "Shop", message)
             self.update_coin_label()
+            self.refresh_inventory()
         else:
             QMessageBox.warning(self, "Shop", message)
 
