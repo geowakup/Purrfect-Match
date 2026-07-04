@@ -46,7 +46,7 @@ class InventoryWindow(QWidget):
     def refresh(self):
 
         self.coin_label.setText(
-            f"Coins: {self.pet.coins}"
+            f"Coins: {self.pet.coin}"
         )
 
         while self.inventory_layout.count():

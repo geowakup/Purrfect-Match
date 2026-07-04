@@ -22,6 +22,9 @@ from shop_system import ShopSystem
 from shop_window import ShopWindow
 from styles import load_theme
 from timer_loop import TimerLoop
+from shop_window import ShopWindow
+from inventory_window import InventoryWindow
+from shop_system import ShopSystem 
 from Todo import TodoApp
 
 
@@ -79,6 +82,7 @@ class PetWindow(QWidget):
         self.pet.action = None
 
         self._setup_window()
+        
         self.shop_window = None
         self.inventory_window = None
         self._setup_label()
@@ -204,7 +208,7 @@ class PetWindow(QWidget):
         self.timer_loop = TimerLoop(
             self.pet,
             callback=self.game_loop,
-            interval=200
+            interval=1000
         )
         self.timer_loop.start()
 
@@ -568,6 +572,7 @@ class PetWindow(QWidget):
         # ---------------- Death Check ----------------
         if self.lifecycle.check_death():
             print("Pet died")
+            self.timer_loop.stop()
             return
 
         # ---------------- Achievement Progress ----------------

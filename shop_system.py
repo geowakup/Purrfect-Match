@@ -42,10 +42,10 @@ class ShopSystem:
 
         item = self.items[item_name]
 
-        if pet.coins < item["price"]:
+        if pet.coin < item["price"]:
             return False, "Not enough coins."
 
-        pet.coins -= item["price"]
+        pet.coin -= item["price"]
         pet.inventory.append(item_name)
 
         if getattr(pet, "save_callback", None) is not None:

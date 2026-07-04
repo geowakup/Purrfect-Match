@@ -13,7 +13,7 @@ class Pet:
         self.action = None
         self.action_timer = 0
 
-        self.coins = 100
+        self.coin = 100
         self.inventory = []
         self.save_callback = None
 
@@ -88,7 +88,7 @@ class Pet:
             "happiness": self.happiness,
             "state": self.state,
             "action": self.action,
-            "coin": self.coins,
+            "coin": self.coin,
             "inventory": self.inventory, 
         }
     

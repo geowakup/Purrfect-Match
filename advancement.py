@@ -312,6 +312,30 @@ class AdvancementsManager:
                     pass
 
     # ------------------------
+    # Sync unlocked features
+    # ------------------------
+    def sync_feature_unlocks(self):
+
+        # reset all features
+        for feature in self.feature_unlocks:
+            self.feature_unlocks[feature] = False
+
+        # enable features from unlocked achievements
+        for advancement in self.advancements.values():
+
+            if advancement.get("unlocked", False):
+
+                for feature in advancement.get(
+                    "features",
+                    []
+                ):
+                    if feature in self.feature_unlocks:
+                        self.feature_unlocks[feature] = True
+
+    def has_feature_unlocked(self, feature_name):
+        return self.feature_unlocks.get(feature_name, False)
+
+    # ------------------------
     # Get List
     # ------------------------
     def get_advancement_text(self):
