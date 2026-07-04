@@ -11,12 +11,6 @@ class Database:
 
         # define your "tables"
         self.files = {
-    "pet": "pet.json",
-    "tasks": "tasks.json",
-    "stats": "stats.json",
-    "quests": "quests.json"
-}
-        
             "pet": "pet.json",
             "tasks": "tasks.json",
             "stats": "stats.json",
