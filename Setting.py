@@ -275,15 +275,17 @@ class SettingsApp(QWidget):
         self.summer_ghost_button.setEnabled(summer_unlocked)
         self.summer_ghost_button.setText("Summer Ghost" if summer_unlocked else "🔒 Summer Ghost")
 
-        self.bgm_label.setEnabled(bgm_unlocked)
-        self.bgm_slider.setEnabled(bgm_unlocked)
+        # Keep the control buttons available permanently, but only allow actual song playback
+        # once the achievement-based unlock is active.
+        self.bgm_label.setEnabled(True)
+        self.bgm_slider.setEnabled(True)
         self.bgm_status_label.setText("🔒 BGM Locked" if not bgm_unlocked else "🎵 BGM Unlocked")
         self.bgm_tracks_label.setText("🔒 Select BGM Track:" if not bgm_unlocked else "Select BGM Track:")
-        self.bgm_tracks_label.setEnabled(bgm_unlocked)
-        self.bgm_play_button.setEnabled(bgm_unlocked)
-        self.bgm_stop_button.setEnabled(bgm_unlocked)
-        self.bgm_play_button.setText("🔒 Play BGM" if not bgm_unlocked else "Play BGM")
-        self.bgm_stop_button.setText("🔒 Stop BGM" if not bgm_unlocked else "Stop BGM")
+        self.bgm_tracks_label.setEnabled(True)
+        self.bgm_play_button.setEnabled(True)
+        self.bgm_stop_button.setEnabled(True)
+        self.bgm_play_button.setText("Play BGM")
+        self.bgm_stop_button.setText("Stop BGM")
         self.bgm_tracks_placeholder.setVisible(not bgm_unlocked)
 
         if bgm_unlocked:
@@ -435,7 +437,7 @@ class SettingsApp(QWidget):
             return
 
         if not self.parent_window.advancement_manager.has_feature_unlocked("bgm"):
-            QMessageBox.warning(self, "BGM", "BGM is locked until unlocked by achievements.")
+            QMessageBox.information(self, "BGM", "No BGM track is unlocked yet.")
             return
 
         if not hasattr(self.parent_window, "bgm_player"):
@@ -463,7 +465,7 @@ class SettingsApp(QWidget):
             return
 
         if not self.parent_window.advancement_manager.has_feature_unlocked("bgm"):
-            QMessageBox.warning(self, "BGM", "BGM is locked until unlocked by achievements.")
+            QMessageBox.information(self, "BGM", "No BGM track is unlocked yet.")
             return
 
         if not hasattr(self.parent_window, "bgm_player"):
@@ -493,8 +495,8 @@ class SettingsApp(QWidget):
         bgm_unlocked = self.parent_window.advancement_manager.has_feature_unlocked("bgm")
         if not bgm_unlocked:
             self.bgm_status_label.setText("🔒 BGM Locked")
-            self.bgm_play_button.setEnabled(False)
-            self.bgm_stop_button.setEnabled(False)
+            self.bgm_play_button.setEnabled(True)
+            self.bgm_stop_button.setEnabled(True)
             return
 
         if not hasattr(self.parent_window, "bgm_player"):

@@ -22,7 +22,7 @@ class AdvancementsManager:
         self.feature_unlocks = {
             "dark_theme": False,
             "cyber_theme": False,
-            "bgm": False,
+            "bgm": True,
             "developer_mode": False
         }
 
