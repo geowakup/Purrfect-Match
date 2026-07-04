@@ -12,8 +12,7 @@ class AdvancementsManager:
         )
         self.legacy_save_file = os.path.join(
             self.BASE_DIR,
-            "data",
-            "advancements.json"
+            "save_data.json"
         )
 
         self.advancements = {
@@ -103,19 +102,14 @@ class AdvancementsManager:
     # Unlock Achievement
     # ------------------------
     def unlock(self, key):
-        if key not in self.advancements:
-            return
-
         if not self.advancements[key]["unlocked"]:
+
             self.advancements[key]["unlocked"] = True
-
-            for feature in self.advancements[key].get("features", []):
-                self.feature_unlocks[feature] = True
-
             print(
                 f"Advancement unlocked: "
                 f"{self.advancements[key]['name']}"
             )
+
             self.save_data()
 
     # ------------------------
@@ -158,50 +152,7 @@ class AdvancementsManager:
     def load_data(self):
         if os.path.exists(self.save_file):
             with open(self.save_file, "r") as file:
-                loaded_data = json.load(file)
-        elif os.path.exists(self.legacy_save_file):
-            with open(self.legacy_save_file, "r") as file:
-                loaded_data = json.load(file)
-            self.save_data()
-        else:
-            return
-
-        merged_data = {}
-        for key, default_advancement in self.advancements.items():
-            if key not in loaded_data:
-                merged_data[key] = default_advancement.copy()
-                continue
-
-            loaded_advancement = loaded_data[key]
-            if not isinstance(loaded_advancement, dict):
-                merged_data[key] = default_advancement.copy()
-                continue
-
-            merged_advancement = default_advancement.copy()
-            merged_advancement.update(loaded_advancement)
-            if "features" not in merged_advancement:
-                merged_advancement["features"] = default_advancement.get("features", [])
-            merged_data[key] = merged_advancement
-
-        self.advancements = merged_data
-
-    def sync_feature_unlocks(self):
-        self.feature_unlocks = {
-            "dark_theme": False,
-            "cyber_theme": False,
-            "bgm": False,
-            "developer_mode": False,
-            "river_flow": False,
-            "summer_ghost": False
-        }
-
-        for advancement in self.advancements.values():
-            if advancement.get("unlocked", False):
-                for feature in advancement.get("features", []):
-                    self.feature_unlocks[feature] = True
-
-    def has_feature_unlocked(self, feature):
-        return self.feature_unlocks.get(feature, False)
+                self.advancements = json.load(file)
 
     # ------------------------
     # Get List
